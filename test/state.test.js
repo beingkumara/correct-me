@@ -56,3 +56,16 @@ test('a verdict clears "edited" marks but a once-edited "?" line never becomes d
   assert.equal(after.lines.some((l) => l.edited), false);
   assert.deepEqual(doubtfulLines(after), [2]);
 });
+
+test('after a verdict, editedFrom tracks the lowest edited line until the next verdict', () => {
+  const checked = withVerdict(withChecking(withConfirm(withConfirm(withRead(), 1), 2)), { lines: [], result: { kind: 'clear' } });
+  assert.equal(checked.editedFrom, null);
+  const editedLow = withEdit(withEdit(checked, 2, 'du = dx,  v = sin x'), 1, 'u = x,  dv = cos x dx');
+  assert.equal(editedLow.editedFrom, 2);
+  assert.equal(withEdit(editedLow, 2, 'again').editedFrom, 2);
+  assert.equal(withVerdict(editedLow, { lines: [], result: { kind: 'clear' } }).editedFrom, null);
+});
+
+test('before any verdict, editing does not set editedFrom', () => {
+  assert.equal(withEdit(withRead(), 2, 'changed').editedFrom, null);
+});

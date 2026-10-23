@@ -298,3 +298,28 @@
     animation: none;
   }
 }
+
+/* After an edit: lines below fade to "needs re-check"; marks above stay solid */
+.row-aside {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.row.is-recheck .row-input,
+.row.is-recheck .row-note {
+  opacity: var(--faded);
+}
+
+.row.is-recheck .row-input {
+  color: var(--pencil);
+}
+
+.row-aside .read-ok {
+  padding-bottom: 12px;
+}
+
+/* A mark that is already on the page shouldn't be "drawn" again when its line is edited */
+.row-aside[data-kind*='+edited'] .mark {
+  animation: none;
+}

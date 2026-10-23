@@ -45,11 +45,20 @@ function buildRow(line, index) {
   return row;
 }
 
-/** What the right-hand margin of a row shows: a read doubt, a teacher's mark, or a small label. */
+/** Lines below the lowest edit since the last check depend on it, so their marks are stale. */
+const needsRecheck = (state, index) => state.verdict && state.editedFrom !== null && index + 1 > state.editedFrom;
+
+/**
+ * What the right-hand margin of a row shows: a read doubt, a teacher's mark, or a small label.
+ * Parts joined by "+" render side by side, e.g. "cross+edited".
+ */
 function asideKind(state, line, index) {
   if (!line.confident && !line.edited && !line.confirmed) return 'doubt';
   const mark = state.verdict?.lines[index]?.mark;
-  if (mark) return mark;
+  if (mark) {
+    const base = needsRecheck(state, index) && mark !== 'question' ? 'recheck' : mark;
+    return line.edited ? `${base}+edited` : base;
+  }
   if (index === 0) return 'question';
   if (line.edited) return 'edited';
   return line.confirmed ? 'confirmed' : 'none';
@@ -73,19 +82,28 @@ const ASIDE = {
   cross: () => el('span', 'mark mark-cross', '✗'),
   unsure: () => el('span', 'mark mark-unsure', '?'),
   not_checked: () => el('span', 'mark-label', 'not checked'),
+  recheck: () => el('span', 'mark-label', 'needs re-check'),
 };
 
-const MARK_LABEL = { tick: 'correct', cross: 'mistake here', unsure: 'not sure', not_checked: 'not checked' };
+const MARK_LABEL = {
+  tick: 'correct',
+  cross: 'mistake here',
+  unsure: 'not sure',
+  not_checked: 'not checked',
+  recheck: 'needs re-check',
+  edited: 'edited',
+};
 
 function renderAside(row, kind, index) {
   const aside = row.querySelector('.row-aside');
   if (aside.dataset.kind === kind) return;
-  const content = ASIDE[kind](index);
-  aside.replaceChildren(...(content ? [content] : []));
+  const parts = kind.split('+');
+  aside.replaceChildren(...parts.map((part) => ASIDE[part](index)).filter(Boolean));
   aside.dataset.kind = kind;
   const input = row.querySelector('.row-input');
   const base = index === 0 ? 'Line 1, the question' : `Line ${index + 1}`;
-  input.setAttribute('aria-label', MARK_LABEL[kind] ? `${base}, ${MARK_LABEL[kind]}` : base);
+  const labels = parts.map((part) => MARK_LABEL[part]).filter(Boolean);
+  input.setAttribute('aria-label', [base, ...labels].join(', '));
 }
 
 /** The teacher's handwritten note under a crossed or unsure line. */
@@ -118,6 +136,7 @@ function renderLines(state, els, busy) {
     if (document.activeElement !== input && input.value !== line.text) input.value = line.text;
     input.disabled = busy;
     row.classList.toggle('is-not-checked', verdictLine?.mark === 'not_checked');
+    row.classList.toggle('is-recheck', Boolean(needsRecheck(state, index)));
     renderAside(row, asideKind(state, line, index), index);
     renderNote(row, verdictLine);
   });
@@ -155,6 +174,7 @@ export function render(state, els) {
   els.actions.hidden = state.lines.length === 0;
   const pending = linesNeedingReview(state);
   els.check.disabled = busy || !canCheck(state);
+  els.check.textContent = state.verdict && state.editedFrom !== null ? 'Check again' : 'Check';
   els.checkGate.textContent =
     pending.length === 0 ? '' : `Fix or confirm ${listLines(pending)} first.`;
 }

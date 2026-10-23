@@ -49,7 +49,7 @@ Build mode: fast — learner wants a careful look at raw AI output at the slice-
   Learner check: Upload your photo, press Check, and read the marks. Does line 5 get the red cross with a hint you'd find useful, and are lines after it clearly greyed out?
   Commit: `feat: show ticks, first cross, hint, and results after Check`
 
-- [ ] **5. Fix a line and Check again until no mistakes**
+- [x] **5. Fix a line and Check again until no mistakes**
   Becomes usable: Editing any line keeps the marks visible, adds an "edited" mark, fades every line below to "needs re-check", and turns the button into **Check again**, which re-judges from the top. The full demo loop works: line 5 → fix → line 6 → fix → "No mistakes found."
   Why now: Completes the core journey and the second demo beat (line 6 flagged because it no longer follows from the fixed line 5).
   PRD ref: `prd.md > Editing and Re-checking`, `prd.md > The Core Journey` (steps 7–8, Success)
