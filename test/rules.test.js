@@ -75,3 +75,42 @@ test('confident verdicts pass through unchanged', () => {
   const verdicts = [withConfidence(ok(2), 0.9), withConfidence(wrong(3), MIN_CONFIDENCE)];
   assert.deepEqual(calibrate(verdicts), verdicts);
 });
+
+// Verdicts as the checker actually returned them for the fixtures in samples/lines/.
+const verdictOf = (line, status, alternativeReading = null, followsUnderAlternative = false, confidence = 0.96) => ({
+  line,
+  status,
+  confidence,
+  alternativeReading,
+  followsUnderAlternative,
+  note: status === 'ok' ? null : 'Incorrect application of the chain rule.',
+  hint: status === 'ok' ? null : 'What is the derivative of sin(u)?',
+});
+
+test('sin x² read as (sin x)²: a wrong line that follows under that reading becomes unsure', () => {
+  const out = calibrate([verdictOf(2, 'wrong', '(sin x)²', true)]);
+  assert.equal(out[0].status, 'unsure');
+  assert.equal(out[0].note, 'This could also be read as (sin x)². Which did you mean?');
+  assert.equal(out[0].hint, null);
+  assert.deepEqual(applyRules(out, 2).result, { kind: 'clear_with_unsure', lines: [2] });
+});
+
+test('an alternative reading under which the line is still wrong keeps the cross', () => {
+  const out = calibrate([verdictOf(2, 'wrong', '(sin x)²', false)]);
+  assert.equal(out[0].status, 'wrong');
+});
+
+test('6-line sign error: cross on line 5, then on line 6 after line 5 is fixed', () => {
+  const firstCheck = calibrate([
+    verdictOf(2, 'ok'), verdictOf(3, 'ok'), verdictOf(4, 'ok'),
+    verdictOf(5, 'wrong', null, null, 0.99), verdictOf(6, 'wrong', null, null, 0.98),
+  ]);
+  assert.deepEqual(applyRules(firstCheck, 6).result, { kind: 'mistake', line: 5 });
+  assert.equal(applyRules(firstCheck, 6).lines[5].mark, 'not_checked');
+
+  const afterFix = calibrate([
+    verdictOf(2, 'ok'), verdictOf(3, 'ok'), verdictOf(4, 'ok'), verdictOf(5, 'ok'),
+    verdictOf(6, 'wrong', null, null, 0.98),
+  ]);
+  assert.deepEqual(applyRules(afterFix, 6).result, { kind: 'mistake', line: 6 });
+});

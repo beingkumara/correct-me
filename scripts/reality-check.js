@@ -72,7 +72,7 @@ async function runCheck(lines, doubtfulLines = []) {
   console.log(
     calibrations.length === 0
       ? 'no verdicts changed'
-      : calibrations.map((c) => `line ${c.line} → unsure (${c.reason}, confidence ${c.confidence})`).join('\n'),
+      : calibrations.map((c) => `line ${c.line} → unsure (${c.reason}, confidence ${c.confidence}${c.alternativeReading ? `, reads as ${c.alternativeReading}` : ""})`).join('\n'),
   );
 
   console.log('\n--- leak guard ---');

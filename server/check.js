@@ -31,6 +31,8 @@ export async function checkLines(lines, { doubtfulLines = [] } = {}) {
   await logGuardEvents(guardEvents);
 
   // correctedLine and finalAnswer stop here: applyRules only sees the guarded verdicts.
-  const calibrations = calibrated.filter((v) => v.calibrated).map((v) => ({ line: v.line, reason: v.calibrated, confidence: v.confidence }));
+  const calibrations = calibrated
+    .filter((v) => v.calibrated)
+    .map((v) => ({ line: v.line, reason: v.calibrated, confidence: v.confidence, alternativeReading: v.alternativeReading }));
   return { display: applyRules(guarded.verdicts, lines.length), raw, guardEvents, calibrations };
 }

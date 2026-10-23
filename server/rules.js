@@ -5,12 +5,15 @@
 export const MIN_CONFIDENCE = 0.75;
 
 export const MISREAD_NOTE = 'I might have misread this line. Check it against your photo.';
+export const alternativeReadingNote = (reading) => `This could also be read as ${reading}. Which did you mean?`;
 export const lowConfidenceNote = (line) => `Not sure this follows from line ${line - 1}. Worth checking yourself.`;
 
 /**
  * Turn the model's raw verdicts into ones the student can trust, before applyRules.
  * - A "wrong" verdict on a doubtful line (read with "?" and confirmed, not edited) blames the
  *   reader, not the student: it becomes "unsure" with MISREAD_NOTE.
+ * - A "wrong" verdict the checker says would be right under another reading of the same notation
+ *   (e.g. sin x² as (sin x)²) becomes "unsure" — the notation is ambiguous, not the student wrong.
  * - Any verdict below MIN_CONFIDENCE becomes "unsure", keeping the model's hint question.
  * @param verdicts validated verdicts with `confidence`
  * @param {{ doubtfulLines?: number[], minConfidence?: number }} options
@@ -19,6 +22,9 @@ export function calibrate(verdicts, { doubtfulLines = [], minConfidence = MIN_CO
   return verdicts.map((v) => {
     if (v.status === 'wrong' && doubtfulLines.includes(v.line)) {
       return { ...v, status: 'unsure', note: MISREAD_NOTE, hint: null, calibrated: 'misread' };
+    }
+    if (v.status === 'wrong' && v.followsUnderAlternative && v.alternativeReading) {
+      return { ...v, status: 'unsure', note: alternativeReadingNote(v.alternativeReading), hint: null, calibrated: 'alternative_reading' };
     }
     if (v.status !== 'unsure' && v.confidence < minConfidence) {
       return { ...v, status: 'unsure', note: lowConfidenceNote(v.line), calibrated: 'low_confidence' };

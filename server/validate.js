@@ -46,6 +46,12 @@ export function validateCheck(reply, lineCount) {
     if (typeof v.confidence !== 'number' || v.confidence < 0 || v.confidence > 1) {
       return fail(`line ${expectedLine} has confidence ${v.confidence}, expected 0–1`);
     }
+    if (v.alternativeReading != null && typeof v.alternativeReading !== 'string') {
+      return fail(`line ${expectedLine} has a non-text alternativeReading`);
+    }
+    if (v.followsUnderAlternative != null && typeof v.followsUnderAlternative !== 'boolean') {
+      return fail(`line ${expectedLine} has a non-boolean followsUnderAlternative`);
+    }
   }
 
   return {
@@ -55,6 +61,8 @@ export function validateCheck(reply, lineCount) {
         line: v.line,
         status: v.status,
         confidence: v.confidence,
+        alternativeReading: optionalText(v.alternativeReading),
+        followsUnderAlternative: v.followsUnderAlternative === true,
         note: v.status === 'ok' ? null : optionalText(v.note),
         hint: v.status === 'ok' ? null : optionalText(v.hint),
       })),

@@ -76,3 +76,12 @@ test('rejects missing or out-of-range confidence', () => {
     assert.equal(validateCheck({ verdicts: [v] }, 2).ok, false, String(confidence));
   }
 });
+
+test('keeps alternative readings and rejects wrongly typed ones', () => {
+  const base = { line: 2, status: 'wrong', confidence: 0.96, note: 'Chain rule.', hint: null };
+  const good = validateCheck({ verdicts: [{ ...base, alternativeReading: '(sin x)²', followsUnderAlternative: true }] }, 2);
+  assert.equal(good.value.verdicts[0].alternativeReading, '(sin x)²');
+  assert.equal(good.value.verdicts[0].followsUnderAlternative, true);
+  assert.equal(validateCheck({ verdicts: [{ ...base, alternativeReading: 7 }] }, 2).ok, false);
+  assert.equal(validateCheck({ verdicts: [{ ...base, followsUnderAlternative: 'yes' }] }, 2).ok, false);
+});

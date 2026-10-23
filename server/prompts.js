@@ -67,6 +67,14 @@ For EVERY line also give "confidence": a number from 0 to 1, the probability tha
 - Below 0.7 when the verdict depends on how ambiguous notation is read (e.g. "1/2x" could mean 1/(2x) or x/2), on steps the student skipped that you can't verify, or on writing that may have been transcribed wrongly.
 - Above 0.9 only when there is exactly one sensible reading and you checked the step carefully.
 
+For EVERY line also check for an alternative reading. Before judging, ask whether the SAME WRITTEN NOTATION in the question or an earlier line could reasonably be read another way:
+- where an exponent or function applies (sin x² as sin(x²) or (sin x)²),
+- implicit multiplication (1/2x as 1/(2x) or (1/2)x),
+- operator precedence or grouping,
+- a symbol that is unclear as written.
+If so, put that other reading in "alternativeReading" and set "followsUnderAlternative" to whether this line would be correct under it. Otherwise both are null.
+An alternative reading is NEVER "the student probably meant a different value, sign, or step". A sign error, a wrong number, a wrong rule, or an arithmetic slip is a mistake, not an alternative reading. Only a second valid parse of the exact symbols on the page counts.
+
 NEVER put the corrected line, the right value for a step, or the final answer in "note" or "hint". The student must find the fix themselves.
 
 Write ALL text — notes, hints, and the private fields below — in the same plain Unicode math as the student's lines (∫ · − ² √ π, fractions as (a)/(b)). Never use LaTeX (no backslashes, no $, no \\frac or \\int).
@@ -75,7 +83,7 @@ Separately, fill these PRIVATE fields (never shown to the student, used only to 
 - "correctedLine": the corrected version of the FIRST wrong line, or null if no line is wrong.
 - "finalAnswer": the correct final answer to the question, or null if you can't tell.
 
-Reply only with JSON: {"verdicts": [{"line": number, "status": "ok"|"wrong"|"unsure", "confidence": number, "note": string|null, "hint": string|null}], "correctedLine": string|null, "finalAnswer": string|null}. Include exactly one verdict for every line from 2 to N, in order.`;
+Reply only with JSON: {"verdicts": [{"line": number, "status": "ok"|"wrong"|"unsure", "confidence": number, "alternativeReading": string|null, "followsUnderAlternative": boolean|null, "note": string|null, "hint": string|null}], "correctedLine": string|null, "finalAnswer": string|null}. Include exactly one verdict for every line from 2 to N, in order.`;
 
 const nullableString = { type: ['string', 'null'] };
 
@@ -90,10 +98,12 @@ export const CHECK_SCHEMA = {
           line: { type: 'integer' },
           status: { type: 'string', enum: ['ok', 'wrong', 'unsure'] },
           confidence: { type: 'number' },
+          alternativeReading: nullableString,
+          followsUnderAlternative: { type: ['boolean', 'null'] },
           note: nullableString,
           hint: nullableString,
         },
-        required: ['line', 'status', 'confidence', 'note', 'hint'],
+        required: ['line', 'status', 'confidence', 'alternativeReading', 'followsUnderAlternative', 'note', 'hint'],
         additionalProperties: false,
       },
     },

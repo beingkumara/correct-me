@@ -112,7 +112,7 @@ Implements the learner's requirement: "The model call should sit behind one smal
 
 ### Prompts — `server/prompts.js`
 - **Read prompt:** transcribe each handwritten line exactly as written, *including mistakes*; never fix, complete, or invent lines; use plain Unicode math; mark `confident: false` for any line you're not sure you read correctly; report `unreadable` or `not_math` instead of guessing.
-- **Check prompt:** line 1 is the question. For each line 2…N, judge only whether it **follows correctly from the question and the lines before it, as written**. Don't judge it against your own solution path, and accept valid alternative methods. Use `unsure` whenever you are not confident, because a confident wrong verdict is worse than "unsure". For `wrong` lines, name the kind of mistake briefly and ask one hint question. Never state the corrected line, the right value, or the final answer in `note` or `hint`. Give a calibrated `confidence` (0–1) for every line. Write everything, including the private fields, in plain Unicode math, never LaTeX. Separately, fill `correctedLine` (for the first wrong line) and `finalAnswer`, which are private and used only for checking.
+- **Check prompt:** line 1 is the question. For each line 2…N, judge only whether it **follows correctly from the question and the lines before it, as written**. Don't judge it against your own solution path, and accept valid alternative methods. Use `unsure` whenever you are not confident, because a confident wrong verdict is worse than "unsure". For `wrong` lines, name the kind of mistake briefly and ask one hint question. Never state the corrected line, the right value, or the final answer in `note` or `hint`. Give a calibrated `confidence` (0–1) for every line, plus `alternativeReading` / `followsUnderAlternative`: another parse of the *same written notation* (exponent scope, implicit multiplication, precedence, an unclear symbol), and whether the line is right under it — never "the student meant a different value or sign". Write everything, including the private fields, in plain Unicode math, never LaTeX. Separately, fill `correctedLine` (for the first wrong line) and `finalAnswer`, which are private and used only for checking.
 - The rules about stopping, greying, and messages are **not** in the prompt. They live in `rules.js`.
 
 ### Reply Validator — `server/validate.js`
@@ -122,7 +122,7 @@ Checks the parsed replies against what the rules need, beyond the schema:
 - Any violation → `bad_ai_reply` → "Try again". **Never a partial verdict.**
 
 ### Verdict Rules — `server/rules.js`
-First, pure `calibrate(verdicts, { doubtfulLines })` (build checkpoint): a `wrong` on a doubtful line → `unsure` with "I might have misread this line. Check it against your photo."; any `ok`/`wrong` below `MIN_CONFIDENCE` (0.75) → `unsure` with "Not sure this follows from line X. Worth checking yourself." and the model's hint kept.
+First, pure `calibrate(verdicts, { doubtfulLines })` (build checkpoint): a `wrong` on a doubtful line → `unsure` with "I might have misread this line. Check it against your photo."; a `wrong` with `followsUnderAlternative: true` → `unsure` with "This could also be read as X. Which did you mean?"; any `ok`/`wrong` below `MIN_CONFIDENCE` (0.75) → `unsure` with "Not sure this follows from line X. Worth checking yourself." and the model's hint kept.
 Then a pure function, `applyRules(verdicts, lineCount)`, that returns `{ lines: [{ line, mark, note, hint, assumes }], result }`:
 - `mark` is one of `question | tick | cross | unsure | not_checked`.
 - It walks lines 2…N. `ok` gives a tick. `unsure` gives an unsure mark, records the line, and continues. The first `wrong` gives a cross and stops; every later line is `not_checked`.
@@ -165,7 +165,7 @@ Implements the learner's requirements: hint and note are checked in code, catchi
 ```json
 {
   "verdicts": [
-    { "line": 2, "status": "ok", "confidence": 0.97, "note": null, "hint": null },
+    { "line": 2, "status": "ok", "confidence": 0.97, "alternativeReading": null, "followsUnderAlternative": null, "note": null, "hint": null },
     { "line": 5, "status": "wrong", "confidence": 0.95, "note": "Sign error while integrating.", "hint": "What do you get when you differentiate cos x?" }
   ],
   "correctedLine": "∫ sin x dx = −cos x",

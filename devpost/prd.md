@@ -77,6 +77,7 @@ The learner's principle: *a confident wrong verdict is worse than an honest "I'm
 - [ ] Checking **continues** past an unsure line, treating it as correct.
 - [ ] If the student confirmed a "?" line without editing it and the checker still calls it wrong, it shows as unsure with "I might have misread this line." The student is never crossed for the app's misread. *(Build checkpoint.)*
 - [ ] The checker gives a confidence for every line, and the code, not the prompt, turns low-confidence verdicts into unsure. *(Build checkpoint: asking for "unsure" alone never produced one.)*
+- [ ] If the checker says a line is wrong but would be correct under another reading of the same written notation (e.g. sin x² as (sin x)²), the code shows it as unsure: "This could also be read as (sin x)². Which did you mean?" A different value or sign is never an alternative reading, so real mistakes keep their cross. *(Build checkpoint: the checker was 0.96 sure on an ambiguous line, so confidence alone can't be trusted.)*
 - [ ] If a later line gets a red cross, its note adds that this verdict assumes line X was right, which the app wasn't sure about.
 - [ ] If the check reaches the end with no cross but one or more unsure lines, the result is **"No mistakes found, but I wasn't sure about line X. Check that one yourself."**, not a clean "No mistakes found."
 - [ ] A clean "No mistakes found." appears only when every line is a confident tick.

@@ -71,7 +71,7 @@ Build mode: fast — learner wants a careful look at raw AI output at the slice-
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after slice 2: you judge the raw reader and checker output on your own photo, which can change the prompts or models before the page is built
+- [x] Early usable behavior explored — after slice 2: you judge the raw reader and checker output on your own photo, which can change the prompts or models before the page is built
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review
@@ -96,4 +96,5 @@ Activity mode: [live app and editor, explicit static fallback, focused alternati
 - Slice 2 verification uses the actual sample photo (4 lines, mistake on line 4: `− cos x` should be `+ cos x`) plus a typed 6-line `--lines` file to test the follow-on flag — the committed photo isn't the planned 6-line, line-5 demo. What the demo shows is the learner's call at the slice-2 checkpoint.
 - Added `server/check.js` (checker → validate → guard → rules) so the reality check and `POST /api/check` share one pipeline; the guard runs on validated verdicts before `applyRules`, so `correctedLine`/`finalAnswer` never reach the display object — keeps the slice-4 route from duplicating the reality-check logic.
 - Slice-2 checkpoint feedback (learner): Check disabled until every "?" line is edited or confirmed; a `wrong` on a confirmed-but-unedited "?" line becomes unsure ("I might have misread this line"); the checker returns per-line `confidence` and code turns verdicts below 0.75 into unsure; private fields requested in plain Unicode, with `delatex()` normalization in the leak guard as a backup — the end-to-end photo run crossed a line for the reader's misread `f`, "unsure" never appeared from prompting alone, and LaTeX private fields slipped past string matching.
-- Self-reported confidence alone did not produce "unsure" for `y = sin x²` → `dy/dx = 2 sin x cos x` (`samples/lines/ambiguous-sin-x-squared.txt`): the checker said wrong at 0.96 and never considered `(sin x)²`. Next step pending the learner's decision.
+- Self-reported confidence alone did not produce "unsure" for `y = sin x²` → `dy/dx = 2 sin x cos x` (`samples/lines/ambiguous-sin-x-squared.txt`): the checker said wrong at 0.96 and never considered `(sin x)²`. Learner chose a code rule: the checker also reports `alternativeReading`/`followsUnderAlternative` (restricted in the prompt to re-parsing the same notation, never a different value or sign), and `calibrate()` turns wrong-but-right-under-the-alternative into unsure. Live: sin x² → unsure; 6-line sign error → cross on 5, then 6.
+- Demo photo replaced by the learner's 6-line version (sign error on line 5); `samples/sample_question.jpeg` now matches the planned demo, and the reality check flags line 5 with no leak.
