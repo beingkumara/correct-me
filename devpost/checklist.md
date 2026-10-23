@@ -72,7 +72,7 @@ Build mode: fast — learner wants a careful look at raw AI output at the slice-
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — after slice 2: you judge the raw reader and checker output on your own photo, which can change the prompts or models before the page is built
-- [ ] Final kick-the-tires exploration and feedback completed
+- [x] Final kick-the-tires exploration and feedback completed — see Final Review (2026-10-23)
 
 ## Final Review
 

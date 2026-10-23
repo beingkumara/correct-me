@@ -3,7 +3,7 @@ doc: scope
 status: approved
 ---
 
-# Red Pen *(working title)*
+# Correct Me
 
 Upload a photo of your handwritten math solution, and it finds the first line where your reasoning broke and tells you what went wrong there, without giving you the right answer.
 
@@ -62,4 +62,4 @@ A one-minute demo:
 
 ## Open for the PRD
 - Does the student give the problem statement separately, or is it read from the first line of the photo?
-- The project name. "Red Pen" is only a placeholder.
+- The project name. Resolved in the PRD: **Correct Me** (replaced the "Red Pen" placeholder).

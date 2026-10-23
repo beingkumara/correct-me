@@ -11,3 +11,8 @@ node_modules/
 
 # Leak-guard logs (local only)
 logs/
+
+# Local-only extras kept out of the public repo
+/samples/tshirt.jpeg
+/agent/
+/.claude/
