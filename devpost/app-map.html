@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Correct Me App Map</title>
+<meta name="description" content="A compact guide to how Correct Me works: one action traced through the code, where to make common changes, and a practice to reuse.">
+<style>
+  :root {
+    --paper: #f8f3e6;
+    --paper-raised: #fdf9ef;
+    --rule: #c9d8ea;
+    --margin-line: #e3a5a5;
+    --ink: #1f2a3a;
+    --ink-soft: #5f6878;
+    --red: #c3202c;
+    --green: #237a4b;
+    --amber: #b7791f;
+    --blue: #2f5d8a;
+    --edge: #e4dccb;
+    --font-math: "STIX Two Text", "Cambria Math", Georgia, serif;
+    --font-hand: "Caveat", "Bradley Hand", "Segoe Print", cursive;
+    --font-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-code: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --space-section: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
+    --radius: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #191a1d; --paper-raised: #212329; --rule: #2b3442; --margin-line: #5c2d31;
+      --ink: #ebe6da; --ink-soft: #a5acb8; --red: #ff6f6f; --green: #62d39b; --amber: #f0b45a;
+      --blue: #8ab4e8; --edge: #30333a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #191a1d; --paper-raised: #212329; --rule: #2b3442; --margin-line: #5c2d31;
+    --ink: #ebe6da; --ink-soft: #a5acb8; --red: #ff6f6f; --green: #62d39b; --amber: #f0b45a;
+    --blue: #8ab4e8; --edge: #30333a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-ui); }
+  main { max-width: 980px; margin: 0 auto; padding: 0 16px 4rem; }
+  header { padding: var(--space-section) 0 1.5rem; border-bottom: 2px solid var(--margin-line); }
+  .eyebrow { font: 600 0.74rem/1 var(--font-ui); letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-soft); }
+  h1 { font: 600 clamp(2.2rem, 1.5rem + 3.5vw, 3.6rem)/1.05 var(--font-math); margin: 0.5rem 0 0.7rem; }
+  h1 em { font: 700 0.7em var(--font-hand); color: var(--red); font-style: normal; }
+  .lede { max-width: 60ch; margin: 0; color: var(--ink-soft); }
+  section { padding-top: var(--space-section); }
+  h2 { font: 600 1.6rem/1.2 var(--font-math); margin: 0 0 1rem; }
+  h2 small { display: block; font: 400 0.95rem/1.4 var(--font-ui); color: var(--ink-soft); margin-top: 0.3rem; }
+  code { font: 0.88em var(--font-code); background: var(--paper-raised); border: 1px solid var(--edge); border-radius: 4px; padding: 0.05em 0.35em; overflow-wrap: anywhere; }
+  .pieces { display: grid; gap: 0.8rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .piece { background: var(--paper-raised); border: 1px solid var(--edge); border-top: 3px solid var(--c); border-radius: var(--radius); padding: 0.9rem 1rem; }
+  .piece h3 { margin: 0 0 0.3rem; font: 600 1.05rem/1.3 var(--font-ui); }
+  .piece p { margin: 0; color: var(--ink-soft); font-size: 0.95rem; }
+  figure { margin: 0; background: var(--paper-raised); border: 1px solid var(--edge); border-radius: var(--radius); padding: 1rem; overflow-x: auto; }
+  figure svg { display: block; width: 100%; min-width: 640px; height: auto; }
+  figcaption { color: var(--ink-soft); font-size: 0.9rem; margin-top: 0.6rem; }
+  .svg-box { fill: var(--paper); stroke: var(--edge); stroke-width: 1.5; }
+  .svg-box.page { stroke: var(--blue); }
+  .svg-box.rule { stroke: var(--red); }
+  .svg-box.ai { stroke: var(--amber); stroke-dasharray: 5 4; }
+  .svg-t { fill: var(--ink); font: 600 13px var(--font-ui); }
+  .svg-s { fill: var(--ink-soft); font: 11px var(--font-code); }
+  .svg-a { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+  .svg-head { fill: var(--ink-soft); }
+  ol.route { list-style: none; padding: 0; margin: 0; counter-reset: stop; display: grid; gap: 0.9rem; }
+  ol.route > li { counter-increment: stop; position: relative; padding: 1rem 1rem 1rem 3.4rem; background: var(--paper-raised); border: 1px solid var(--edge); border-radius: var(--radius); }
+  ol.route > li::before { content: counter(stop); position: absolute; left: 1rem; top: 0.9rem; width: 1.7rem; height: 1.7rem; border-radius: 50%; display: grid; place-items: center; background: var(--red); color: #fff; font: 700 0.9rem/1 var(--font-ui); }
+  ol.route h3 { margin: 0 0 0.2rem; font: 600 1.05rem/1.3 var(--font-ui); }
+  ol.route p { margin: 0.3rem 0 0; }
+  .where { font-size: 0.9rem; color: var(--ink-soft); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  th, td { text-align: left; vertical-align: top; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--edge); }
+  th { font: 600 0.78rem/1.2 var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+  .scroll { overflow-x: auto; }
+  .practice { border: 1.5px dashed var(--red); border-radius: var(--radius); padding: 1rem 1.2rem; }
+  .practice p { margin: 0.4rem 0; }
+  .hand { font: 600 1.45rem/1.3 var(--font-hand); color: var(--red); }
+  details { background: var(--paper-raised); border: 1px solid var(--edge); border-radius: var(--radius); padding: 0.7rem 1rem; margin-top: 0.8rem; }
+  summary { cursor: pointer; font-weight: 600; }
+  summary:focus-visible, a:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+  pre { margin: 0.6rem 0 0; padding: 0.8rem; background: var(--paper); border: 1px solid var(--edge); border-radius: 6px; overflow-x: auto; font: 0.85rem/1.5 var(--font-code); }
+  footer { margin-top: var(--space-section); padding-top: 1rem; border-top: 1px solid var(--edge); color: var(--ink-soft); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="eyebrow">App map · take-home guide</p>
+    <h1>Correct <em>Me</em></h1>
+    <p class="lede">Upload a photo of handwritten math working. Correct Me reads it into lines you can fix, then finds the first line where the reasoning broke and asks a hint question, without ever giving the answer.</p>
+  </header>
+
+  <section aria-labelledby="pieces-h">
+    <h2 id="pieces-h">Three pieces<small>The model judges; your code decides what the student sees.</small></h2>
+    <div class="pieces">
+      <div class="piece" style="--c: var(--blue)"><h3>The page</h3><p><code>public/</code>: plain HTML, CSS and JS. Shrinks the photo, shows editable lines and the teacher's marks, keeps the session in memory.</p></div>
+      <div class="piece" style="--c: var(--ink)"><h3>The server</h3><p><code>server/index.js</code>: Express. Holds the Groq key, serves the page, and has two routes: <code>/api/read</code> and <code>/api/check</code>.</p></div>
+      <div class="piece" style="--c: var(--red)"><h3>Your rules, in code</h3><p><code>server/rules.js</code>, <code>leakGuard.js</code>, <code>validate.js</code>: decide unsure, stop at the first wrong line, and keep the answer out of every hint.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="flow-h">
+    <h2 id="flow-h">One action: pressing Check<small>Your current lines go out; ticks, one red cross, and a hint come back.</small></h2>
+    <figure>
+      <svg viewBox="0 0 880 300" role="img" aria-labelledby="flow-title flow-desc">
+        <title id="flow-title">What happens when you press Check</title>
+        <desc id="flow-desc">The page sends the current lines to POST /api/check. checkLines asks the checker model on Groq, validates the reply, calibrates unsure verdicts, runs the leak guard and the first-wrong rules, and sends back only the marks, which the page draws.</desc>
+        <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="svg-head" d="M0 0 L10 5 L0 10 z"/></marker></defs>
+        <rect class="svg-box page" x="10" y="20" width="190" height="64" rx="8"/>
+        <text class="svg-t" x="24" y="46">1 · Check pressed</text>
+        <text class="svg-s" x="24" y="68">app.js › checkCurrentLines</text>
+        <rect class="svg-box" x="250" y="20" width="200" height="64" rx="8"/>
+        <text class="svg-t" x="264" y="46">POST /api/check</text>
+        <text class="svg-s" x="264" y="68">index.js › parseCheckBody</text>
+        <rect class="svg-box ai" x="500" y="20" width="200" height="64" rx="8"/>
+        <text class="svg-t" x="514" y="46">Checker model (Groq)</text>
+        <text class="svg-s" x="514" y="68">gpt-oss-120b · llm.js</text>
+        <rect class="svg-box rule" x="500" y="130" width="370" height="64" rx="8"/>
+        <text class="svg-t" x="514" y="156">2 · validate → calibrate → leak guard → rules</text>
+        <text class="svg-s" x="514" y="178">check.js › checkLines · rules.js</text>
+        <rect class="svg-box" x="250" y="230" width="200" height="56" rx="8"/>
+        <text class="svg-t" x="264" y="253">Only marks + result</text>
+        <text class="svg-s" x="264" y="274">private answer deleted</text>
+        <rect class="svg-box page" x="10" y="230" width="190" height="56" rx="8"/>
+        <text class="svg-t" x="24" y="253">3 · ✓ ✓ ✗ + hint</text>
+        <text class="svg-s" x="24" y="274">render.js › renderNote</text>
+        <path class="svg-a" d="M200 52 H246"/>
+        <path class="svg-a" d="M450 52 H496"/>
+        <path class="svg-a" d="M600 84 V126"/>
+        <path class="svg-a" d="M560 194 V258 H454"/>
+        <path class="svg-a" d="M250 258 H204"/>
+      </svg>
+      <figcaption>Dashed box: the AI. Red box: your rules. Numbers match the route below.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="route-h">
+    <h2 id="route-h">Reference route: three stops<small>A reference to follow on your own. Open each file and search for the name in <code>code</code>.</small></h2>
+    <ol class="route">
+      <li>
+        <h3>The button sends what's on the page now</h3>
+        <p class="where"><code>public/js/app.js</code> → search <code>checkCurrentLines</code></p>
+        <p>It sends the current text of every line, plus the "?" lines you confirmed without editing (<code>doubtfulLines</code> in <code>public/js/state.js</code>). That's why Check again judges your edited working, not the original photo.</p>
+      </li>
+      <li>
+        <h3>The model judges; your code decides</h3>
+        <p class="where"><code>server/check.js</code> → <code>checkLines</code>, then <code>server/rules.js</code> → <code>calibrate</code> and <code>applyRules</code></p>
+        <p>The checker returns a status, confidence and any alternative reading for each line. <code>calibrate</code> turns a confirmed misread, a low-confidence verdict, or "right under another reading" into unsure. The leak guard swaps out any hint that contains the answer, and <code>applyRules</code> stops at the first wrong line.</p>
+      </li>
+      <li>
+        <h3>The page draws the teacher's marks</h3>
+        <p class="where"><code>public/js/render.js</code> → <code>renderAside</code> and <code>renderNote</code></p>
+        <p>Ticks, the red cross, the amber "?", the handwritten note and hint, "not checked", and the result line. All text goes in through <code>textContent</code>, so nothing from the model can run as code.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="change-h">
+    <h2 id="change-h">To change this, start here</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>You want to change…</th><th>Start here</th></tr></thead>
+      <tbody>
+        <tr><td>How cautious the "unsure" mark is</td><td><code>server/rules.js</code> → <code>MIN_CONFIDENCE</code> (0.75), with tests in <code>test/rules.test.js</code></td></tr>
+        <tr><td>What the checker or reader is asked</td><td><code>server/prompts.js</code> → <code>CHECK_PROMPT</code>, <code>READ_PROMPT</code>; try it with <code>npm run reality-check</code></td></tr>
+        <tr><td>Which models are used, and their time and length limits</td><td><code>.env</code> (<code>READER_MODEL</code>, <code>CHECKER_MODEL</code>, <code>READER_TIMEOUT_MS</code>, <code>READER_MAX_TOKENS</code>); defaults in <code>server/llm.js</code> → <code>DEFAULTS</code></td></tr>
+        <tr><td>The words in the honest messages</td><td>Page: <code>public/js/render.js</code> → <code>MESSAGES</code>. Server failures: <code>server/index.js</code> → <code>FRIENDLY</code></td></tr>
+        <tr><td>What counts as a leaked answer</td><td><code>server/leakGuard.js</code> → <code>normalize</code>, <code>fragmentsFrom</code>; tests in <code>test/leakGuard.test.js</code></td></tr>
+        <tr><td>Colours, fonts, the ruled paper</td><td><code>public/styles/tokens.css</code>, then <code>notebook.css</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="practice-h">
+    <h2 id="practice-h">A practice to reuse</h2>
+    <div class="practice">
+      <p class="hand">Check the raw AI output on a case you planted, and put the decision in code.</p>
+      <p><b>What happened:</b> the prompt asked the checker to say "unsure" when it wasn't sure. On <code>y = sin x²</code> → <code>dy/dx = 2 sin x cos x</code>, a line that is right if you read it as <code>(sin x)²</code>, it said "wrong" with <b>0.96</b> confidence. Asking it to write out any alternative reading surfaced <code>(sin x)²</code>, so the rule "wrong but right under another reading → unsure" now lives in <code>calibrate</code>.</p>
+      <p><b>Evidence:</b> <code>npm run reality-check -- --lines samples/lines/ambiguous-sin-x-squared.txt</code> prints the raw reply next to what the student sees; the test <em>"sin x² read as (sin x)²…"</em> in <code>test/rules.test.js</code> keeps the rule in place.</p>
+      <p><b>On your next project:</b> when a model's answer drives what users see, keep a small set of inputs where you know the right answer, print the raw output beside the final result, and move any rule you can't trust the model to follow into tested code.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="run-h">
+    <h2 id="run-h">Run it again</h2>
+    <details open>
+      <summary>Start the app</summary>
+      <pre>npm install
+cp .env.example .env      # add your Groq key to READER_API_KEY and CHECKER_API_KEY
+npm start                 # http://localhost:3000
+npm test                  # unit tests</pre>
+    </details>
+    <details>
+      <summary>Look at the raw AI output</summary>
+      <pre>npm run reality-check samples/sample_question.jpeg
+npm run reality-check -- --lines samples/lines/six-line-sign-error.txt</pre>
+    </details>
+  </section>
+
+  <footer>Snapshot of the code at commit <code>6a14510</code> (2026-10-23). The code can drift from this map; the source files are the truth.</footer>
+</main>
+</body>
+</html>

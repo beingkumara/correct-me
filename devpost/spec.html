@@ -226,12 +226,12 @@
         <h3>What it checks</h3>
         <ol>
           <li><b>Fragments:</b> the corrected line, its right-hand side, the final answer, and its right-hand side. Each comes as written and without "+ C".</li>
-          <li><b>Normalize</b> both sides: lowercase, no spaces, <code>· × ∙ ⋅ *</code> removed (so <code>x·sin x</code> = <code>x sin x</code>), <code>− – — ‐ -</code> → <code>-</code>, trailing <code>+c</code> removed.</li>
+          <li><b>Normalize</b> both sides: LaTeX turned into plain Unicode first (<code>\frac</code>, <code>\sin</code>, <code>^{2}</code>, <code>$</code>…), then lowercase, no spaces, <code>· × ∙ ⋅ *</code> and brackets removed (so <code>x·sin(x)</code> = <code>x sin x</code>), <code>− – — ‐ -</code> → <code>-</code>, <code>²</code> → <code>^2</code>, trailing <code>+c</code> removed.</li>
           <li><b>Hit:</b> a fragment appears inside the note or hint.</li>
           <li><b>Skip:</b> fragments under 3 characters (like <code>x</code>), which are logged as <code>skipped_short</code>.</li>
           <li><b>On a hit:</b> a generic note and hint are shown, plus one JSON line in <code>logs/leak-guard.jsonl</code> with exactly what was caught.</li>
         </ol>
-        <p class="lbl" style="margin-top:0.8rem">Accepted limit: a reworded leak ("the antiderivative of sin is negative cosine") gets past string matching. The logs tell you how often the model even tries.</p>
+        <p class="lbl" style="margin-top:0.8rem">Accepted limit: a reworded near-answer ("What is x·sin x − (−cos x) equal to?", seen in the build) gets past string matching. It catches copied answers, not rewordings.</p>
         <p class="lbl">Try: "It should be − cos x" (caught) · "x sin x + cos x" (caught) · "What's the derivative of cos x?" (passes)</p>
       </div>
     </div>
@@ -252,12 +252,12 @@
         <tr><td>Server</td><td>Node 20.6+ · Express 5</td><td>Keeps the key in <code>.env</code> (<code>--env-file</code>, no dotenv)</td></tr>
         <tr><td>Reader</td><td><code>qwen/qwen3.8-27b</code> <span class="tag prev">preview</span></td><td>Only open vision model on Groq. Swappable in <code>.env</code></td></tr>
         <tr><td>Checker</td><td><code>openai/gpt-oss-120b</code> <span class="tag prod">production</span></td><td>Strongest text reasoning model on Groq. Strict JSON schema</td></tr>
-        <tr><td>Replies</td><td>Strict <code>json_schema</code></td><td>Groq forces the shape. <code>validate.js</code> still checks the meaning</td></tr>
-        <tr><td>Tests</td><td><code>node:test</code></td><td>Pure <code>rules</code>, <code>leakGuard</code>, <code>validate</code></td></tr>
+        <tr><td>Replies</td><td>Checker: strict <code>json_schema</code> · Reader: <code>json_object</code></td><td>Qwen loops under strict schema with an image, so the reader uses plain JSON mode. <code>validate.js</code> checks both</td></tr>
+        <tr><td>Tests</td><td><code>node:test</code></td><td><code>rules</code>, <code>leakGuard</code>, <code>validate</code>, <code>state</code>, route input, and the gateway over a fake HTTP provider (59 tests)</td></tr>
       </tbody>
     </table>
     </div>
-    <p class="lbl">To verify early: the free-tier rate limits (you'll check your console before the build), strict schema + image on Qwen (the docs disagree), and the 4 MB base64 cap (not in the current docs).</p>
+    <p class="lbl">Verified in the build: strict schema + image on Qwen loops to the token limit (so <code>json_object</code>); Qwen free tier is 7,000 input tokens a minute (about 3 reads a minute); Qwen sometimes returns 503 "over capacity", which shows Try again.</p>
   </section>
 
   <section aria-labelledby="files-h">
@@ -321,6 +321,19 @@ npm run reality-check samples/&lt;photo&gt;</pre>
     </div>
   </section>
 
+  <section aria-labelledby="found-h">
+    <h2 id="found-h">What the reality check found<small>And what changed because of it.</small></h2>
+    <div class="unknown">
+      <ol>
+        <li><b>Reading worked</b>, and honestly: the hard line was marked "?". But the checker then crossed it for the reader's misread → Check waits for "?" lines, and <code>calibrate()</code> turns a cross on a confirmed "?" line into unsure.</li>
+        <li><b>Line 5, then line 6, then the all-clear:</b> all as planned, with no leaked fix.</li>
+        <li><b>"Unsure" never appeared from prompting alone.</b> On <code>sin x²</code> the checker was wrong-and-0.96-sure → per-line <code>confidence</code> plus <code>alternativeReading</code> / <code>followsUnderAlternative</code>, with the decision made in code. Restricted to another parse of the same notation, never a different value or sign.</li>
+        <li><b>The private answer came back in LaTeX once</b> → the prompt asks for plain Unicode, and the guard normalizes LaTeX as a backup.</li>
+        <li><b>At final review:</b> the read timeout only covered the reply's headers → one timeout over the whole reply, a 1,500-token cap on the reader, and an honest message when a read can't be finished.</li>
+      </ol>
+    </div>
+  </section>
+
   <section aria-labelledby="simp-h">
     <h2 id="simp-h">Simplified on purpose</h2>
     <details class="rule"><summary><b>Plain Unicode math in text inputs</b><span class="f">instead of a LaTeX renderer and math editor</span></summary><div class="d-body"><p>STIX Two keeps it looking printed, and students edit simple text. Fractions read as <code>(x+1)/(x−1)</code>.</p></div></details>
@@ -338,17 +351,19 @@ npm run reality-check samples/&lt;photo&gt;</pre>
     { t: "Upload & shrink", on: ["image", "state", "e-shrink", "e-state"], f: "public/js/image.js", prd: "Upload",
       p: "The photo is drawn on a canvas, scaled so the long edge is ≤ 1600 px, and exported as a JPEG at 0.85. The page shows it right away with the red-pen sweep." },
     { t: "Read request", on: ["api", "routes", "llm", "reader", "e-call", "e-up", "e-gw", "e-read"], f: "server/index.js → llm.js", prd: "Reading the Handwriting",
-      p: "POST /api/read with the data URL. The gateway sends the read prompt plus the image to the reader model with a strict JSON schema.",
+      p: "POST /api/read with the data URL. The gateway sends the read prompt plus the image to the reader model in json_object mode (Qwen loops under strict schema with an image), capped at 1,500 tokens with one 20 s timeout covering the whole reply.",
       code: '{ "status": "ok", "lines": [ { "text": "I = ∫ x·cos x dx", "confident": true }, … ] }' },
     { t: "Validate read", on: ["validate", "e-val", "e-readback", "render"], f: "server/validate.js", prd: "States and Boundaries",
-      p: "The status must be ok, unreadable, or not_math, and the lines must be non-empty strings. Anything else is a bad_ai_reply, so the page shows Try again and keeps the photo. Unreadable or not_math shows the honest note." },
+      p: "The status must be ok, unreadable, or not_math, and the lines must be non-empty strings. A reply cut off at the token cap or unusable becomes gave_up: \"This doesn't look like math working I can read.\" A slow or unreachable reader shows Try again and names the photo reader. Unreadable or not_math shows the honest note." },
     { t: "Confirm & edit", on: ["render", "state"], f: "render.js · state.js", prd: "Reading the Handwriting",
-      p: "Line 1 is labeled Question. Unconfident lines show \"?\". Edits change only the in-memory state, through pure with* updaters." },
+      p: "Line 1 is labeled Question. Unconfident lines show \"?\" and a Looks right button; Check stays disabled until each is fixed or confirmed. Edits change only the in-memory state, through pure with* updaters." },
     { t: "Check request", on: ["api", "routes", "llm", "checker", "e-call", "e-up", "e-gw", "e-check"], f: "server/llm.js · prompts.js", prd: "Checking a Solution",
-      p: "POST /api/check with the CURRENT text lines, with no photo. The checker judges each line 2…N against the question and the lines before it: ok, wrong, or unsure.",
-      code: '{ "verdicts": [ { "line": 5, "status": "wrong", "note": "Sign error…", "hint": "What do you get when…" } ],\n  "correctedLine": "∫ sin x dx = −cos x", "finalAnswer": "I = x·sin x + cos x + C" }' },
+      p: "POST /api/check with the CURRENT text lines and the confirmed-but-unedited \"?\" lines, with no photo. The checker judges each line 2…N against the question and the lines before it: ok, wrong, or unsure, plus a confidence and any alternative reading of the same notation.",
+      code: '{ "verdicts": [ { "line": 5, "status": "wrong", "confidence": 0.95, "alternativeReading": null, "followsUnderAlternative": null, "note": "Sign error…", "hint": "What do you get when…" } ],\n  "correctedLine": "∫ sin x dx = −cos x", "finalAnswer": "I = x·sin x + cos x + C" }' },
     { t: "Validate check", on: ["validate", "e-val"], f: "server/validate.js", prd: "States and Boundaries",
       p: "There must be exactly N−1 verdicts for lines 2…N, in order, with valid statuses, and every wrong or unsure line needs a note. A mismatch shows Try again. Never a partial verdict." },
+    { t: "Calibrate", on: ["rules", "e-rules"], f: "server/rules.js › calibrate()", prd: "Unsure Verdicts",
+      p: "Code decides unsure: a wrong on a confirmed \"?\" line → \"I might have misread this line\"; wrong but right under another reading of the same notation → \"This could also be read as …\"; any verdict under 0.75 confidence → unsure." },
     { t: "Leak guard", on: ["guard", "e-guard"], f: "server/leakGuard.js", prd: "Checking a Solution",
       p: "Each note and hint is checked against the corrected line, its right-hand side, the final answer, and its right-hand side, after normalizing. A hit shows the generic hint and logs a JSON line." },
     { t: "Apply your rules", on: ["rules", "e-rules"], f: "server/rules.js", prd: "Unsure Verdicts",
@@ -364,15 +379,15 @@ npm run reality-check samples/&lt;photo&gt;</pre>
     ["page", "Page Shell and Layout", "public/index.html · styles/*", "Header, upload box, and the two-column working view (stacked below 900 px). Cream paper, blue rules, red margin.", "Screens and Layout · Look and Feel"],
     ["page", "Session State", "public/js/state.js", "{ phase, photoUrl, lines, verdict, editedFrom, failure, message }, in memory only, updated through pure functions.", "States and Boundaries"],
     ["page", "Image Shrinker", "public/js/image.js", "createImageBitmap → canvas ≤ 1600 px → JPEG 0.85 data URL. An undecodable file (e.g. HEIC in Chrome) shows: I can't open this file type. Please upload a JPEG or PNG. Never the handwriting message.", "Upload"],
-    ["page", "API Client", "public/js/api.js", "fetch wrappers with a 45 s timeout. Every failure becomes a typed failure that shows Try again with the state untouched.", "States and Boundaries"],
+    ["page", "API Client", "public/js/api.js", "fetch wrappers with 25 s (read) / 45 s (check) timeouts. Every failure becomes a typed failure that shows Try again with the state untouched, naming the photo reader or the checker.", "States and Boundaries"],
     ["page", "Lines Editor and Marks", "public/js/render.js", "Rows, ✓ ✗ (?), notes and hints in Caveat, \"not checked\", \"edited\", \"needs re-check\", result, and the button. textContent only.", "Reading · Checking · Unsure · Editing"],
     ["page", "Page Controller", "public/js/app.js", "Upload → read → render. Edit → withEdit(k). Check → render. Try again repeats the last request.", "The Core Journey · Starting Over"],
     ["srv", "Server and Routes", "server/index.js", "Static files plus /api/read and /api/check. Input checks (data:image URL; 2–40 lines ≤ 300 characters). Envelope { ok, data | error }.", "The Core Journey"],
-    ["ai", "Model Gateway", "server/llm.js", "chatJSON({ role, messages, schema }) → READER_* / CHECKER_* from .env → OpenAI-compatible /chat/completions, strict schema, 40 s timeout.", "Your swap requirement"],
+    ["ai", "Model Gateway", "server/llm.js", "chatJSON({ role, messages, schema }) → READER_* / CHECKER_* from .env → OpenAI-compatible /chat/completions. Per-role JSON mode (reader json_object, checker strict), one timeout over the whole reply (reader 20 s, checker 40 s), reader capped at 1,500 tokens.", "Your swap requirement"],
     ["ai", "Prompts", "server/prompts.js", "Read: transcribe exactly, mistakes included; never invent; flag unconfident lines. Check: judge each line against what came before; use \"unsure\" when unsure; never put the fix in a note or hint.", "Reading · Checking"],
     ["rule", "Reply Validator", "server/validate.js", "Exactly N−1 verdicts, in order, with valid statuses and notes where needed. Otherwise bad_ai_reply.", "States and Boundaries"],
-    ["rule", "Verdict Rules", "server/rules.js", "Pure applyRules(): first ✗ stops; unsure carries on; assumption notes; clear / clear_with_unsure / mistake.", "Checking a Solution · Unsure Verdicts"],
-    ["rule", "Leak Guard", "server/leakGuard.js", "Normalize, find fragments, swap in generic text, log to logs/leak-guard.jsonl, delete private fields.", "Checking a Solution · Non-Goals"],
+    ["rule", "Verdict Rules", "server/rules.js", "Pure calibrate() (misread, alternative reading, low confidence → unsure), then applyRules(): first ✗ stops; unsure carries on; assumption notes; clear / clear_with_unsure / mistake.", "Checking a Solution · Unsure Verdicts"],
+    ["rule", "Leak Guard", "server/leakGuard.js", "Normalize (LaTeX, brackets, powers too), find fragments, swap in generic text, log to logs/leak-guard.jsonl, delete private fields.", "Checking a Solution · Non-Goals"],
   ];
 
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
@@ -419,10 +434,20 @@ npm run reality-check samples/&lt;photo&gt;</pre>
 
   // Leak guard demo: same rules as the spec's Leak Guard section.
   const MIN_FRAGMENT = 3;
-  const normalize = s => s.toLowerCase()
+  const LATEX = { int: "∫", pi: "π", theta: "θ", infty: "∞", sqrt: "√" };
+  const delatex = s => {
+    let out = s.replace(/\$/g, "").replace(/\\(left|right)\b/g, "");
+    for (let i = 0; i < 3; i++) out = out.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, "($1)/($2)");
+    return out.replace(/\\sqrt\{([^{}]*)\}/g, "√($1)").replace(/\\(mathrm|operatorname|text)\{([^{}]*)\}/g, "$2")
+      .replace(/\\(cdot|times|ast)\b/g, "·").replace(/\\[,;:! ]|\\quad\b|\\qquad\b/g, " ")
+      .replace(/\\([a-zA-Z]+)/g, (_, n) => LATEX[n] ?? n).replace(/\^\{([^{}]*)\}/g, "^$1").replace(/[{}]/g, "");
+  };
+  const normalize = s => delatex(s).toLowerCase()
     .replace(/\s+/g, "")
     .replace(/[·×∙⋅*]/g, "")
+    .replace(/[()[\]]/g, "")
     .replace(/[−–—‐-]/g, "-")
+    .replace(/²/g, "^2").replace(/³/g, "^3")
     .replace(/\+c(onstant)?$/, "");
   const rhs = s => (s.includes("=") ? s.slice(s.lastIndexOf("=") + 1) : s);
   const dropC = s => s.replace(/\s*\+\s*(c|constant)\s*$/i, "");

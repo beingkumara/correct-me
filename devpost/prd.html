@@ -274,7 +274,7 @@
   <section aria-labelledby="split-h">
     <h2 id="split-h">Decisions and boundaries<small>Open each list.</small></h2>
     <details class="decide" open>
-      <summary>Your product decisions <span class="count">12</span></summary>
+      <summary>Your product decisions <span class="count">16</span></summary>
       <ul>
         <li><strong>"Try a sample" is Later</strong> <em>so build time goes to the core path and unsure behavior.</em></li>
         <li><strong>Name: Correct Me.</strong></li>
@@ -288,6 +288,10 @@
         <li><strong>Honesty over confidence:</strong> <em>"A confident wrong verdict is worse than an honest 'I'm not sure.'"</em></li>
         <li><strong>Checking continues past an unsure line</strong> <em>and later verdicts state the assumption.</em></li>
         <li><strong>No lost work on failure.</strong></li>
+        <li><strong>Check waits for every "?" line</strong> <em>to be fixed or confirmed. A misread is never blamed on the student. (Build)</em></li>
+        <li><strong>A confirmed "?" line can't get a cross:</strong> <em>"wrong" there shows as unsure, "I might have misread this line." (Build)</em></li>
+        <li><strong>Unsure is decided in code:</strong> <em>low confidence, or "right under another reading of the same notation" (sin x² as (sin x)²), becomes unsure. A different value or sign never counts as another reading. (Build)</em></li>
+        <li><strong>A photo the reader can't make sense of</strong> <em>gets "This doesn't look like math working I can read" in seconds, never a network message. (Final review)</em></li>
       </ul>
     </details>
     <details class="build">
@@ -324,6 +328,19 @@
         <li>No subjects beyond math in this version</li>
       </ul>
     </details>
+  </section>
+
+  <section aria-labelledby="changed-h">
+    <h2 id="changed-h">What the build changed<small>Each came from evidence: a real run, a test, or your review.</small></h2>
+    <div class="open-q">
+      <ul>
+        <li><b>Misreads aren't the student's fault.</b> On the first real photo the reader read <code>∫cos</code> as <code>f cos</code>, flagged it "?", and the checker still crossed the line. Now Check stays disabled until each "?" line is fixed or confirmed, and a cross on a confirmed "?" line becomes unsure.</li>
+        <li><b>"Unsure" needed code, not a request.</b> Asking for it never produced one. On <code>y = sin x²</code> → <code>dy/dx = 2 sin x cos x</code> the checker said wrong with 0.96 confidence. The checker now reports a confidence and any alternative reading of the same notation, and the code turns low-confidence or right-under-another-reading verdicts into unsure.</li>
+        <li><b>The demo photo is six lines</b> with the sign error on line 5, as planned: line 5 flagged, then line 6, then "No mistakes found." The squashed <code>u = x  dv = …</code> read is kept on purpose to show the confirm step.</li>
+        <li><b>Accepted limit:</b> the leak guard catches copied answers, not reworded near-answers like "What is x·sin x − (−cos x) equal to?"</li>
+        <li><b>Stuck reads end fast and honestly.</b> A non-math photo or a looping reader gets the not-math note within seconds, and read failures name the photo reader, not "the checker".</li>
+      </ul>
+    </div>
   </section>
 
   <section aria-labelledby="oq-h">
@@ -430,7 +447,7 @@
         { t: L5_BAD, m: "bad", note: { text: "Sign error while integrating.", hint: "What do you get when you differentiate cos x?", extra: "This assumes line 3 was right, which I wasn't sure about." } },
         { t: L6_BAD, m: "skip", tag: "not checked" },
       ],
-      criteria: ["Unsure = amber/grey circled \"?\" with a soft note, never an answer", "Checking continues past an unsure line", "A later cross states the assumption", "With no cross: \"No mistakes found, but I wasn't sure about line X. Check that one yourself.\""],
+      criteria: ["Unsure = amber/grey circled \"?\" with a soft note, never an answer", "Low confidence, a confirmed misread, or another valid reading of the notation all become unsure, decided in code", "Checking continues past an unsure line", "A later cross states the assumption", "With no cross: \"No mistakes found, but I wasn't sure about line X. Check that one yourself.\""],
       src: "Unsure Verdicts",
     },
     {
