@@ -1,11 +1,12 @@
 // Draws the state into the page. All dynamic text goes in through textContent, never innerHTML.
 
-import { canCheck, linesNeedingReview } from './state.js';
+import { canCheck, linesNeedingReview, linesNeedingRecheck } from './state.js';
 
 export const MESSAGES = {
   unsupported_file: "I can't open this file type. Please upload a JPEG or PNG.",
   unreadable: "I can't read this page clearly. Try another photo in better light.",
   not_math: "This doesn't look like a math solution. Correct Me only checks math working for now.",
+  gave_up: "This doesn't look like math working I can read. If it is, try a clearer, closer photo.",
 };
 
 const STATUS_TEXT = { reading: 'Reading your problem...', checking: 'Checking your working...' };
@@ -45,8 +46,7 @@ function buildRow(line, index) {
   return row;
 }
 
-/** Lines below the lowest edit since the last check depend on it, so their marks are stale. */
-const needsRecheck = (state, index) => state.verdict && state.editedFrom !== null && index + 1 > state.editedFrom;
+const needsRecheck = (state, index) => linesNeedingRecheck(state).includes(index + 1);
 
 /**
  * What the right-hand margin of a row shows: a read doubt, a teacher's mark, or a small label.

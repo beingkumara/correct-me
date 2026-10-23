@@ -23,27 +23,47 @@ export function parseCheckBody(body) {
   return linesOk && doubtfulOk ? { lines: lines.map((l) => l.trim()), doubtfulLines } : null;
 }
 
-const FRIENDLY = {
-  invalid_input: 'That request was not something I can check.',
-  ai_failed: "Couldn't reach the checker. Your photo and edits are safe.",
-  bad_ai_reply: 'Something went wrong reading the reply. Try again.',
-  rate_limited: 'Too many checks in a row. Wait a minute and try again.',
+// Each route names the part that actually failed: a read never blames "the checker".
+export const FRIENDLY = {
+  read: {
+    invalid_input: "I couldn't send that photo. Try another one.",
+    ai_failed: "Couldn't reach the photo reader. Your photo is safe.",
+    timeout: 'The photo reader took too long to answer. Your photo is safe.',
+    rate_limited: 'Too many photos in a row. Wait a minute and try again.',
+  },
+  check: {
+    invalid_input: 'That request was not something I can check.',
+    ai_failed: "Couldn't reach the checker. Your photo and edits are safe.",
+    timeout: 'The checker took too long to answer. Your photo and edits are safe.',
+    bad_ai_reply: 'Something went wrong reading the reply. Try again.',
+    truncated: 'Something went wrong reading the reply. Try again.',
+    rate_limited: 'Too many checks in a row. Wait a minute and try again.',
+  },
 };
-const STATUS = { invalid_input: 400, ai_failed: 502, bad_ai_reply: 502, rate_limited: 429 };
+const STATUS = { invalid_input: 400, ai_failed: 502, timeout: 504, bad_ai_reply: 502, truncated: 502, rate_limited: 429 };
 
 const sendOk = (res, data) => res.json({ ok: true, data });
-const sendError = (res, kind) =>
-  res.status(STATUS[kind] ?? 500).json({ ok: false, error: { kind, message: FRIENDLY[kind] ?? FRIENDLY.ai_failed } });
+const sendError = (res, route, kind) =>
+  res
+    .status(STATUS[kind] ?? 500)
+    .json({ ok: false, error: { kind, message: FRIENDLY[route][kind] ?? FRIENDLY[route].ai_failed } });
+
+const logFailure = (route, err) =>
+  err instanceof LlmError
+    ? console.error(`[${route}] ${err.kind}: ${err.message}`, err.detail ? String(JSON.stringify(err.detail)).slice(0, 2000) : '')
+    : console.error(`[${route}] unexpected error`, err);
 
 /** Log the detail server-side; the browser only gets the friendly message. */
 function handleFailure(res, route, err) {
-  if (err instanceof LlmError) {
-    console.error(`[${route}] ${err.kind}: ${err.message}`, err.detail ? String(JSON.stringify(err.detail)).slice(0, 2000) : '');
-    return sendError(res, err.kind);
-  }
-  console.error(`[${route}] unexpected error`, err);
-  return sendError(res, 'ai_failed');
+  logFailure(route, err);
+  return sendError(res, route, err instanceof LlmError ? err.kind : 'ai_failed');
 }
+
+/**
+ * A read the reader couldn't finish (cut off at the token cap — usually a loop on a non-math photo —
+ * or an unusable reply) is not a network problem: tell the student honestly and offer a new photo.
+ */
+export const READ_GAVE_UP_KINDS = ['truncated', 'bad_ai_reply'];
 
 export function createApp() {
   const app = express();
@@ -53,7 +73,7 @@ export function createApp() {
   app.post('/api/read', async (req, res) => {
     const image = req.body?.image;
     if (typeof image !== 'string' || !image.startsWith('data:image/') || image.length > MAX_IMAGE_CHARS) {
-      return sendError(res, 'invalid_input');
+      return sendError(res, 'read', 'invalid_input');
     }
     try {
       const { data } = await chatJSON({ role: 'reader', messages: readMessages(image), schema: READ_SCHEMA, name: 'read' });
@@ -61,13 +81,17 @@ export function createApp() {
       if (!checked.ok) throw new LlmError('bad_ai_reply', `Invalid read reply: ${checked.reason}`, data);
       return sendOk(res, checked.value);
     } catch (err) {
+      if (err instanceof LlmError && READ_GAVE_UP_KINDS.includes(err.kind)) {
+        logFailure('read', err);
+        return sendOk(res, { status: 'gave_up', lines: [] });
+      }
       return handleFailure(res, 'read', err);
     }
   });
 
   app.post('/api/check', async (req, res) => {
     const input = parseCheckBody(req.body);
-    if (!input) return sendError(res, 'invalid_input');
+    if (!input) return sendError(res, 'check', 'invalid_input');
     try {
       const { display } = await checkLines(input.lines, { doubtfulLines: input.doubtfulLines });
       return sendOk(res, display);
@@ -80,7 +104,7 @@ export function createApp() {
   app.use((err, req, res, next) => {
     if (res.headersSent) return next(err);
     console.error(`[${req.path}] bad request: ${err.message}`);
-    return sendError(res, 'invalid_input');
+    return sendError(res, req.path === '/api/read' ? 'read' : 'check', 'invalid_input');
   });
 
   return app;

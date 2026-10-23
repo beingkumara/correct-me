@@ -10,7 +10,7 @@ Rules:
 - Keep the student's own symbols and letters (e.g. "I = …").
 - Set "confident": false for any line where you are not sure you read every symbol correctly.
 - If the photo is too blurry, blank, or illegible to transcribe, return status "unreadable" with no lines.
-- If the photo is not handwritten math working (prose, a selfie, a drawing), return status "not_math" with no lines.
+- If the photo is not handwritten math working (prose, a selfie, clothing, a drawing, printed text or logos), return status "not_math" with no lines straight away. Do not transcribe or describe anything in it.
 - Otherwise return status "ok".
 
 Reply only with JSON: {"status": "ok" | "unreadable" | "not_math", "lines": [{"text": string, "confident": boolean}]}`;

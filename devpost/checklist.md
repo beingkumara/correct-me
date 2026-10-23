@@ -76,6 +76,10 @@ Build mode: fast — learner wants a careful look at raw AI output at the slice-
 
 ## Final Review
 
+Learner's kick-the-tires (2026-10-23): full demo, a correct solution's "No mistakes found", the Wi-Fi-off retry, and the narrow layout all worked.
+
+- [ ] Non-math photo (T-shirt) kept scanning ~2 min instead of an honest message — fixed: reader capped at 1,500 tokens, one 20 s timeout that covers the whole reply (the old timer missed a still-streaming body), a cut-off/garbled read shows "This doesn't look like math working I can read…" with Upload another, and read failures name the photo reader, never the checker. Verified: fake hanging/dripping readers end at 20.1 s with the reader message; a looping reader ends in 0.1 s with the not-math note; real Qwen gives not_math for T-shirt/aerial/print/jersey/tiny-text images in ≤ 2.4 s; demo photo still reads 6 lines. The 2-minute scan itself was not reproduced (old worst case measured: 45 s). Awaiting learner retry.
+- [ ] After "No mistakes found", editing a line didn't fade the lines below — not reproduced (editing line 4 faded 5–6 in the browser; editing the last line has nothing below to fade). Rule moved to `linesNeedingRecheck()` in `state.js` with a regression test for the clear-verdict case. Awaiting learner's confirmation of which line was edited.
 - [ ] Final review complete — feedback resolved and learner confirms ready to ship
 
 ## Code Tour and App Map
@@ -101,3 +105,4 @@ Activity mode: [live app and editor, explicit static fallback, focused alternati
 - Known limitation, accepted by the learner: the leak guard catches copied answers, not reworded near-answers. With line 5 fixed, the checker once hinted "What is x·sin x − (−cos x) equal to?", one step from the answer but containing no answer string. The learner kept it (it still makes the student do the last step) rather than tighten the prompt and risk weaker hints everywhere near the deadline.
 - Reader left as is for the squashed `u = x  dv = cos x dx` gap on lines 2–3 of the demo photo: the learner will fix it in the edit box during the demo, which shows the confirm-what-it-read step on a real misread.
 - Network-failure verification used Playwright's `route.abort()` on `/api/check` instead of stopping the server mid-check — same failure the page sees, but deterministic; Groq's real 503 "over capacity" on the Qwen preview model also appeared during the blank-page run and showed Try again as designed.
+- Reader timeout/cap revised at final review: the original 40 s timer only covered response headers, so a reply that kept streaming was bounded only by the page's 45 s timer, and every read failure said "Couldn't reach the checker". Now a single timer covers headers and body (reader 20 s), the reader is capped at 1,500 tokens, and truncated/garbled reads become an honest `gave_up` message.

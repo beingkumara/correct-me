@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  initialState, withPhoto, withLines, withEdit, withConfirm, withChecking, withVerdict, withFailure, withRetry, canCheck, linesNeedingReview, doubtfulLines,
+  initialState, withPhoto, withLines, withEdit, withConfirm, withChecking, withVerdict, withFailure, withRetry, canCheck, linesNeedingReview, linesNeedingRecheck, doubtfulLines,
 } from '../public/js/state.js';
 
 const read = [
@@ -83,4 +83,21 @@ test('Try again returns to the failed request\'s busy phase and keeps photo, lin
 
   const failedRead = withFailure(withPhoto(initialState(), 'data:image/jpeg;base64,z'), { kind: 'ai_failed', message: 'x', retry: 'read' });
   assert.equal(withRetry(failedRead).phase, 'reading');
+});
+
+test('after "No mistakes found", editing a line marks every line below it for re-check', () => {
+  const lines = ['I = ∫ x cos x dx', 'u = x', 'du = dx', 'I = x sin x − ∫ sin x dx', '∫ sin x dx = −cos x', 'I = x sin x + cos x + C'];
+  const read = withLines(withPhoto(initialState(), 'data:image/jpeg;base64,x'), lines.map((text) => ({ text, confident: true })));
+  const clear = withVerdict(withChecking(read), {
+    lines: lines.map((_, i) => ({ line: i + 1, mark: i ? 'tick' : 'question', note: null, hint: null, assumes: [] })),
+    result: { kind: 'clear' },
+  });
+  assert.deepEqual(linesNeedingRecheck(clear), []);
+
+  const planted = withEdit(clear, 3, 'I = x sin x + ∫ sin x dx');
+  assert.deepEqual(linesNeedingRecheck(planted), [5, 6]);
+  assert.equal(planted.lines[3].edited, true);
+
+  // Editing the last line has no lines below it to fade.
+  assert.deepEqual(linesNeedingRecheck(withEdit(clear, 5, 'I = x sin x − cos x + C')), []);
 });

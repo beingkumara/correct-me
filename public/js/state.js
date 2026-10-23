@@ -9,7 +9,7 @@ export const initialState = () => ({
   verdict: null,
   editedFrom: null, // lowest line edited since the last check
   failure: null, // { kind, message, retry: 'read' | 'check' }
-  message: null, // 'unsupported_file' | 'unreadable' | 'not_math'
+  message: null, // 'unsupported_file' | 'unreadable' | 'not_math' | 'gave_up'
 });
 
 export const withPhoto = (state, photoUrl) => ({ ...initialState(), readId: state.readId, phase: 'reading', photoUrl });
@@ -60,6 +60,15 @@ export const withFailure = (state, failure) => ({ ...state, phase: 'failed', fai
 
 /** Try again: back to the busy phase of whichever request failed, with photo and edits untouched. */
 export const withRetry = (state) => ({ ...state, phase: state.failure?.retry === 'check' ? 'checking' : 'reading', failure: null });
+
+/**
+ * After a verdict (a cross or "No mistakes found"), every line below the lowest edit depends on it,
+ * so its old mark is stale and it needs re-checking. Returns 1-based line numbers.
+ */
+export const linesNeedingRecheck = (state) =>
+  state.verdict && state.editedFrom !== null
+    ? state.lines.flatMap((_, i) => (i + 1 > state.editedFrom ? [i + 1] : []))
+    : [];
 
 /** Lines read with "?" that the student has neither edited nor confirmed. */
 export const linesNeedingReview = (state) =>

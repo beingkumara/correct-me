@@ -1,15 +1,25 @@
 // fetch wrappers for the two routes. Every failure comes back as { ok: false, error: { kind, message } },
 // so the page can show "Try again" without touching the student's work.
 
-const TIMEOUT_MS = 45_000;
-const NETWORK_FAILURE = {
-  ok: false,
-  error: { kind: 'ai_failed', message: "Couldn't reach the checker. Your photo and edits are safe." },
+// A little longer than the server's own limits (20s read, 40s check) so the server's honest message wins.
+const ROUTES = {
+  read: {
+    path: '/api/read',
+    timeoutMs: 25_000,
+    failure: { kind: 'ai_failed', message: "Couldn't reach the photo reader. Your photo is safe." },
+  },
+  check: {
+    path: '/api/check',
+    timeoutMs: 45_000,
+    failure: { kind: 'ai_failed', message: "Couldn't reach the checker. Your photo and edits are safe." },
+  },
 };
 
-async function post(path, body) {
+async function post(route, body) {
+  const { path, timeoutMs, failure } = ROUTES[route];
+  const networkFailure = { ok: false, error: failure };
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(path, {
       method: 'POST',
@@ -20,14 +30,14 @@ async function post(path, body) {
     const json = await res.json().catch(() => null);
     if (json?.ok === true && json.data) return json;
     if (json?.ok === false && json.error?.message) return json;
-    return NETWORK_FAILURE;
+    return networkFailure;
   } catch {
-    return NETWORK_FAILURE;
+    return networkFailure;
   } finally {
     clearTimeout(timer);
   }
 }
 
-export const readPhoto = (image) => post('/api/read', { image });
+export const readPhoto = (image) => post('read', { image });
 
-export const checkLines = (lines, doubtfulLines) => post('/api/check', { lines, doubtfulLines });
+export const checkLines = (lines, doubtfulLines) => post('check', { lines, doubtfulLines });

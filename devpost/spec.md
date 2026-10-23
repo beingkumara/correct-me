@@ -92,7 +92,7 @@ Takes the chosen `File`, decodes it with `createImageBitmap`, draws it on a canv
 PRD ref: `prd.md > Upload`.
 
 ### API Client — `public/js/api.js`
-`readPhoto(dataUrl)` and `checkLines(lines)` wrap `fetch` with a 45-second timeout. Any network error, timeout, non-200 response, or `{ ok: false }` becomes a typed failure the page shows as "Try again", with state untouched.
+`readPhoto(dataUrl)` and `checkLines(lines)` wrap `fetch` with a 25-second (read) / 45-second (check) timeout. Any network error, timeout, non-200 response, or `{ ok: false }` becomes a typed failure the page shows as "Try again", with state untouched.
 PRD ref: `prd.md > States and Boundaries` (something failed).
 
 ### Lines Editor and Marks — `public/js/render.js`
@@ -107,7 +107,7 @@ PRD ref: `prd.md > The Core Journey`, `prd.md > Starting Over`.
 Express 5 app: `express.static('public')`, `express.json({ limit: '8mb' })`, `POST /api/read`, `POST /api/check`. It validates input at the boundary (the image must be a `data:image/` URL; `lines` must be an array of 2–40 strings, each ≤ 300 characters; `doubtfulLines` an optional array of line numbers) and responds with a single envelope shape: `{ ok: true, data }` or `{ ok: false, error: { kind, message } }`. Error kinds are `invalid_input`, `ai_failed`, `bad_ai_reply`, and `rate_limited`. Detailed errors are logged on the server, and the browser gets a friendly message.
 
 ### Model Gateway — `server/llm.js`
-**The one small module that talks to AI providers.** `chatJSON({ role: 'reader' | 'checker', messages, schema })` reads `READER_*` or `CHECKER_*` settings from the environment and POSTs to `${BASE_URL}/chat/completions` (OpenAI-compatible) with `response_format: { type: 'json_schema', json_schema: { name, strict: true, schema } }` (or plain `{ type: 'json_object' }` when `<ROLE>_JSON_MODE=json_object`, which the Qwen reader needs) and a 40-second `AbortController` timeout. It parses `choices[0].message.content` as JSON and throws a typed error if anything fails. Because Groq and Gemini both offer OpenAI-compatible endpoints, switching between them is an `.env` change. Claude would need a small adapter in this same file, which is not built now.
+**The one small module that talks to AI providers.** `chatJSON({ role: 'reader' | 'checker', messages, schema })` reads `READER_*` or `CHECKER_*` settings from the environment and POSTs to `${BASE_URL}/chat/completions` (OpenAI-compatible) with `response_format: { type: 'json_schema', json_schema: { name, strict: true, schema } }` (or plain `{ type: 'json_object' }` when `<ROLE>_JSON_MODE=json_object`, which the Qwen reader needs) and one `AbortController` timeout covering the whole exchange, body included (reader 20 s, checker 40 s; `<ROLE>_TIMEOUT_MS`). The reader is capped at 1,500 completion tokens (`READER_MAX_TOKENS`); a reply cut off at the cap (`finish_reason: "length"` or Groq's `json_validate_failed` at the cap) is `truncated`. It parses `choices[0].message.content` as JSON and throws a typed error if anything fails. Because Groq and Gemini both offer OpenAI-compatible endpoints, switching between them is an `.env` change. Claude would need a small adapter in this same file, which is not built now.
 Implements the learner's requirement: "The model call should sit behind one small module, with the provider and model set in .env."
 
 ### Prompts — `server/prompts.js`
@@ -256,7 +256,8 @@ STIX Two Text, Caveat, and Inter, loaded with `display=swap`. Without a network 
 
 ## Important Failure Modes
 - **The AI reply is malformed, incomplete, or the wrong length** → `bad_ai_reply` → "Something went wrong reading the reply. Try again." The photo and edits are kept. *(Learner requirement: never a verdict.)*
-- **No internet, a Groq error, or a timeout (40 s server / 45 s page)** → "Couldn't reach the checker. Your photo and edits are safe." plus **Try again**, which repeats the same request with the current state.
+- **No internet, a Groq error, or a timeout** (read: 20 s server / 25 s page; check: 40 s / 45 s) → a message naming the part that failed ("Couldn't reach the photo reader…" or "…the checker…") plus **Try again**, which repeats the same request with the current state.
+- **The reader loops or garbles its reply** (e.g. on a photo of a T-shirt) → the token cap ends it in seconds and the page says "This doesn't look like math working I can read. If it is, try a clearer, closer photo." with Upload another photo. Never shown as a network problem. *(Final review.)*
 - **The model leaks the fix in a note or hint** → the leak guard swaps in the generic note and hint and logs the catch. Reworded leaks can get through string matching, and that limit is accepted.
 - **The browser can't open the file (e.g. HEIC in Chrome)** → "I can't open this file type. Please upload a JPEG or PNG." plus the upload-another button. This is never presented as a handwriting problem.
 - **Qwen misreads the handwriting** → the student fixes it in the edit rows. "?" marks the lines the model wasn't sure about. Measured in the first build step (see the investigation below).
