@@ -1,12 +1,14 @@
 // Reality check: run one real photo through the AI calls and print the raw model
 // replies next to the validated result, so you can judge the AI output yourself.
-// Usage: npm run reality-check samples/<photo>
+// Usage: npm run reality-check samples/<photo>            read the photo, then check the lines
+//        npm run reality-check -- --lines <file.txt>     skip reading; check one line per row
 
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { assertConfigured, chatJSON, LlmError } from '../server/llm.js';
 import { READ_SCHEMA, readMessages } from '../server/prompts.js';
 import { validateRead } from '../server/validate.js';
+import { checkLines } from '../server/check.js';
 
 const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
 
@@ -51,14 +53,58 @@ async function runRead(photoPath) {
   return checked.value.lines;
 }
 
+const MARK = { question: 'Q', tick: '✓', cross: '✗', unsure: '?', not_checked: '·' };
+
+function resultMessage(result) {
+  if (result.kind === 'mistake') return `Mistake found on line ${result.line}.`;
+  if (result.kind === 'clear') return 'No mistakes found.';
+  return `No mistakes found, but I wasn't sure about line ${result.lines.join(', ')}. Check that one yourself.`;
+}
+
+async function runCheck(lines) {
+  section(`CHECK (${process.env.CHECKER_MODEL})`);
+  const { display, raw, guardEvents } = await checkLines(lines);
+  console.log('--- raw reply (includes PRIVATE correctedLine / finalAnswer) ---');
+  console.log(JSON.stringify(JSON.parse(raw), null, 2));
+
+  console.log('\n--- leak guard ---');
+  console.log(guardEvents.length === 0 ? 'no hits, nothing skipped' : `${guardEvents.length} event(s), see above and logs/leak-guard.jsonl`);
+
+  console.log('\n--- what the student would see ---');
+  display.lines.forEach((l) => {
+    const status = l.mark === 'not_checked' ? '  (not checked)' : '';
+    console.log(`${String(l.line).padStart(2)} ${MARK[l.mark]} ${lines[l.line - 1]}${status}`);
+    if (l.note) console.log(`       note: ${l.note}`);
+    if (l.hint) console.log(`       hint: ${l.hint}`);
+    if (l.assumes.length > 0) console.log(`       This assumes line ${l.assumes.join(', ')} was right, which I wasn't sure about.`);
+  });
+  console.log(`\nResult: ${resultMessage(display.result)}`);
+}
+
+async function readLinesFile(path) {
+  const text = await readFile(path, 'utf8');
+  return text.split('\n').map((l) => l.trim()).filter(Boolean);
+}
+
 async function main() {
-  const photoPath = process.argv[2];
-  if (!photoPath) {
-    console.error('Usage: npm run reality-check samples/<photo>');
+  const args = process.argv.slice(2);
+  const linesIndex = args.indexOf('--lines');
+  if (args.length === 0 || (linesIndex !== -1 && !args[linesIndex + 1])) {
+    console.error('Usage: npm run reality-check samples/<photo>\n       npm run reality-check -- --lines <file.txt>');
     process.exit(1);
   }
   assertConfigured();
-  await runRead(photoPath);
+
+  if (linesIndex !== -1) {
+    const lines = await readLinesFile(args[linesIndex + 1]);
+    section(`LINES from ${args[linesIndex + 1]}`);
+    lines.forEach((l, i) => console.log(`${String(i + 1).padStart(2)}   ${l}`));
+    await runCheck(lines);
+    return;
+  }
+
+  const read = await runRead(args[0]);
+  if (read) await runCheck(read.map((l) => l.text));
 }
 
 main().catch((err) => {

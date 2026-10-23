@@ -24,3 +24,38 @@ export function validateRead(reply) {
   const lines = reply.lines.map((l) => ({ text: l.text.trim(), confident: l.confident }));
   return { ok: true, value: { status: 'ok', lines } };
 }
+
+const CHECK_STATUSES = ['ok', 'wrong', 'unsure'];
+
+const optionalText = (v) => (typeof v === 'string' && v.trim() !== '' ? v.trim() : null);
+
+/** Exactly one verdict per line 2…lineCount, in order; wrong/unsure must carry a note. */
+export function validateCheck(reply, lineCount) {
+  if (!reply || typeof reply !== 'object') return fail('reply is not an object');
+  const { verdicts } = reply;
+  if (!Array.isArray(verdicts)) return fail('verdicts is not an array');
+  if (verdicts.length !== lineCount - 1) {
+    return fail(`expected ${lineCount - 1} verdicts, got ${verdicts.length}`);
+  }
+
+  for (const [i, v] of verdicts.entries()) {
+    const expectedLine = i + 2;
+    if (!v || v.line !== expectedLine) return fail(`verdict ${i + 1} is for line ${v?.line}, expected ${expectedLine}`);
+    if (!CHECK_STATUSES.includes(v.status)) return fail(`line ${expectedLine} has unknown status ${v.status}`);
+    if (v.status !== 'ok' && !optionalText(v.note)) return fail(`line ${expectedLine} is ${v.status} with no note`);
+  }
+
+  return {
+    ok: true,
+    value: {
+      verdicts: verdicts.map((v) => ({
+        line: v.line,
+        status: v.status,
+        note: v.status === 'ok' ? null : optionalText(v.note),
+        hint: v.status === 'ok' ? null : optionalText(v.hint),
+      })),
+      correctedLine: optionalText(reply.correctedLine),
+      finalAnswer: optionalText(reply.finalAnswer),
+    },
+  };
+}

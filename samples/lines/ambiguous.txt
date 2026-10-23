@@ -1,0 +1,3 @@
+I = ∫ x·cos x dx
+I = x sin x − ∫ sin x dx
+I = x sin x + cos x + k

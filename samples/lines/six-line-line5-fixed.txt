@@ -1,0 +1,6 @@
+I = ∫ x·cos x dx
+Let u = x and dv = cos x dx
+Then du = dx and v = sin x
+I = x·sin x − ∫ sin x dx
+∫ sin x dx = −cos x
+I = x·sin x − cos x + C

@@ -19,7 +19,7 @@ Build mode: fast — learner wants a careful look at raw AI output at the slice-
   Learner check: Run the reality check on your photo. Compare the printed lines with your handwriting, line by line: are all 6 lines there, read correctly, and is any misread at least marked "?"?
   Commit: `feat: read handwritten photo into numbered lines via reality check`
 
-- [ ] **2. The red pen works in the terminal: first wrong line, hint, no leaked answer**
+- [x] **2. The red pen works in the terminal: first wrong line, hint, no leaked answer**
   Becomes usable: The reality check now also sends the lines to the checker model and prints the raw verdicts (including the private `correctedLine`/`finalAnswer`) next to the final rule-applied result: ticks, the first cross with a note and hint, "not checked" after it, unsure marks with "assumes line X", and the right all-clear message. A `--lines` text file lets you re-run the check with line 5 fixed to see line 6 get flagged.
   Why now: This is the unique kernel — diagnosing your solution instead of re-solving it. It's the second big unknown (will the free reasoning model judge line-by-line and say "unsure" honestly?), and the rules and leak guard are pure code that everything visible later depends on.
   PRD ref: `prd.md > Checking a Solution`, `prd.md > Unsure Verdicts`, `prd.md > The Core Journey` (Success)
@@ -94,3 +94,4 @@ Activity mode: [live app and editor, explicit static fallback, focused alternati
 
 - Reader JSON mode is now a per-model `.env` setting (`READER_JSON_MODE=json_object`) instead of an automatic fallback; Groq's `json_validate_failed` maps to `bad_ai_reply` — Qwen accepts strict `json_schema` with an image but loops to the token limit, and an automatic retry would waste the free tier's 7K input-tokens-per-minute budget.
 - Slice 2 verification uses the actual sample photo (4 lines, mistake on line 4: `− cos x` should be `+ cos x`) plus a typed 6-line `--lines` file to test the follow-on flag — the committed photo isn't the planned 6-line, line-5 demo. What the demo shows is the learner's call at the slice-2 checkpoint.
+- Added `server/check.js` (checker → validate → guard → rules) so the reality check and `POST /api/check` share one pipeline; the guard runs on validated verdicts before `applyRules`, so `correctedLine`/`finalAnswer` never reach the display object — keeps the slice-4 route from duplicating the reality-check logic.
