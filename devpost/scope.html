@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Red Pen Scope</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,400;9..144,650&family=Inter:wght@400;550&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #fbf8f1;
+    --paper-edge: #efe8d8;
+    --rule: #dbe4ee;
+    --margin-line: #e8b4b4;
+    --ink: #1f2a3a;
+    --ink-soft: #5a6577;
+    --red: #c8202e;
+    --green: #1f7a4d;
+    --grey: #9aa3ae;
+    --card: #ffffff;
+    --shadow: 0 1px 2px rgb(31 42 58 / 6%), 0 8px 24px rgb(31 42 58 / 8%);
+    --font-hand: "Caveat", "Bradley Hand", "Segoe Print", cursive;
+    --font-display: "Fraunces", Georgia, serif;
+    --font-body: "Inter", system-ui, -apple-system, sans-serif;
+    --space-section: clamp(2.5rem, 2rem + 3vw, 4.5rem);
+    --radius-sm: 4px;
+    --radius-lg: 14px;
+    --duration: 220ms;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #16191f; --paper-edge: #20242c; --rule: #262c36; --margin-line: #5a2a2e;
+      --ink: #e8e4da; --ink-soft: #a3abb8; --red: #ff6b6b; --green: #5fd39a; --grey: #6b7380;
+      --card: #1d2129; --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 35%);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #16191f; --paper-edge: #20242c; --rule: #262c36; --margin-line: #5a2a2e;
+    --ink: #e8e4da; --ink-soft: #a3abb8; --red: #ff6b6b; --green: #5fd39a; --grey: #6b7380;
+    --card: #1d2129; --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 35%);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 16px/1.6 var(--font-body);
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 0 16px 4rem; }
+  header.hero { padding: var(--space-section) 0 2rem; border-bottom: 2px solid var(--margin-line); }
+  .eyebrow { font: 550 0.78rem/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+  h1 { font: 650 clamp(2.6rem, 1.6rem + 5vw, 4.6rem)/1 var(--font-display); margin: 0.6rem 0 0.4rem; }
+  h1 .tag { font: 500 1.4rem var(--font-hand); color: var(--red); vertical-align: super; margin-left: 0.4rem; }
+  .lede { font-size: 1.15rem; max-width: 46ch; color: var(--ink-soft); margin: 0; }
+  h2 { font: 650 1.6rem/1.2 var(--font-display); margin: var(--space-section) 0 1rem; }
+  h2 small { display: block; font: 400 0.95rem var(--font-body); color: var(--ink-soft); margin-top: 0.3rem; }
+  .kernel {
+    margin-top: 2rem; padding: 1.4rem 1.6rem; background: var(--card); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow); border-left: 5px solid var(--red); max-width: 720px;
+  }
+  .kernel p { margin: 0.3rem 0 0; }
+  .kernel blockquote { margin: 0.8rem 0 0; font: 500 1.45rem/1.25 var(--font-hand); color: var(--red); }
+  .grid-2 { display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .grid-2 { grid-template-columns: 1.1fr 0.9fr; } }
+  .note { background: var(--card); border-radius: var(--radius-sm); padding: 1rem 1.2rem; box-shadow: var(--shadow); }
+  .note h3 { margin: 0 0 0.3rem; font: 650 1.05rem var(--font-display); }
+  .note p { margin: 0; color: var(--ink-soft); }
+  .stack { display: grid; gap: 1rem; }
+
+  /* diagram */
+  .diagram { background: var(--card); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 1rem; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .diagram text { font-family: var(--font-body); fill: var(--ink); }
+  .d-box { fill: var(--paper); stroke: var(--ink-soft); stroke-width: 1.5; }
+  .d-key { stroke: var(--red); stroke-width: 2.5; }
+  .d-arrow { stroke: var(--ink-soft); stroke-width: 1.8; fill: none; }
+  .d-loop { stroke: var(--red); stroke-width: 2; fill: none; stroke-dasharray: 6 5; }
+  .d-hand { font-family: var(--font-hand) !important; fill: var(--red) !important; font-size: 19px; }
+  .d-small { font-size: 12px; fill: var(--ink-soft) !important; }
+
+  /* notebook demo */
+  .demo-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+  .step-btn {
+    font: 550 0.9rem var(--font-body); padding: 0.55rem 0.95rem; border-radius: 999px; cursor: pointer;
+    border: 1.5px solid var(--ink-soft); background: transparent; color: var(--ink);
+    transition: transform var(--duration), background-color var(--duration), color var(--duration);
+  }
+  .step-btn:hover { transform: translateY(-1px); }
+  .step-btn:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .step-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .notebook {
+    position: relative; background: var(--card); border-radius: var(--radius-sm); box-shadow: var(--shadow);
+    padding: 1.2rem 1rem 1.4rem 3.6rem;
+    background-image: repeating-linear-gradient(to bottom, transparent 0 43px, var(--rule) 43px 44px);
+    background-position: 0 1.2rem;
+  }
+  .notebook::before { content: ""; position: absolute; left: 2.8rem; top: 0; bottom: 0; width: 2px; background: var(--margin-line); }
+  .nb-line { display: grid; grid-template-columns: 2rem 1fr; align-items: center; min-height: 44px; transition: opacity var(--duration); }
+  .nb-num { font: 0.75rem var(--font-body); color: var(--ink-soft); position: absolute; left: 0.9rem; }
+  .nb-mark { font: 700 1.6rem/1 var(--font-hand); text-align: center; }
+  .nb-text { font: 500 1.5rem/1.2 var(--font-hand); }
+  .nb-line.ok .nb-mark { color: var(--green); }
+  .nb-line.bad .nb-mark { color: var(--red); }
+  .nb-line.bad .nb-text { text-decoration: underline wavy var(--red) 2px; text-underline-offset: 6px; }
+  .nb-line.skip { opacity: 0.35; }
+  .nb-line.skip .nb-text::after { content: "  not checked"; font: 0.75rem var(--font-body); color: var(--ink-soft); }
+  .nb-line { position: relative; }
+  .feedback {
+    margin: 0.4rem 0 0.6rem 2rem; padding: 0.7rem 0.9rem; border-left: 3px solid var(--red);
+    background: color-mix(in srgb, var(--red) 7%, transparent); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .feedback strong { color: var(--red); }
+  .feedback p { margin: 0.15rem 0; }
+  .verdict { margin: 1rem 0 0 2rem; font: 700 1.7rem var(--font-hand); }
+  .verdict.ok { color: var(--green); }
+  .hint-tag { font-size: 0.8rem; color: var(--ink-soft); }
+  .demo-caption { color: var(--ink-soft); font-size: 0.95rem; margin-top: 0.8rem; }
+
+  /* now / later / cut */
+  details {
+    background: var(--card); border-radius: var(--radius-sm); box-shadow: var(--shadow); margin-bottom: 0.8rem;
+    border-left: 5px solid var(--accent, var(--ink-soft));
+  }
+  details.now { --accent: var(--green); }
+  details.later { --accent: #c48a12; }
+  details.cut { --accent: var(--red); }
+  summary {
+    cursor: pointer; padding: 1rem 1.2rem; font: 650 1.15rem var(--font-display); list-style: none;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; font: 400 1.4rem var(--font-body); color: var(--ink-soft); transition: transform var(--duration); }
+  details[open] summary::after { transform: rotate(45deg); }
+  summary:focus-visible { outline: 3px solid var(--red); outline-offset: -3px; }
+  summary .count { font: 400 0.85rem var(--font-body); color: var(--ink-soft); margin-left: auto; }
+  details ul { margin: 0; padding: 0 1.4rem 1.1rem 2.6rem; }
+  details li { margin: 0.35rem 0; }
+  details li em { color: var(--ink-soft); font-style: normal; }
+  .forever { color: var(--red); font-weight: 550; }
+  .open-q { border: 1.5px dashed var(--ink-soft); border-radius: var(--radius-sm); padding: 1rem 1.2rem; }
+  .open-q ul { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+  footer { margin-top: var(--space-section); color: var(--ink-soft); font-size: 0.85rem; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <span class="eyebrow">Scope · Build With AI: Basics · approved</span>
+    <h1>Red Pen<span class="tag">working title</span></h1>
+    <p class="lede">Upload a photo of your handwritten math solution. It finds the first line where your reasoning broke and tells you what went wrong, without giving you the answer.</p>
+    <section class="kernel" aria-labelledby="kernel-h">
+      <span class="eyebrow" id="kernel-h">The unique kernel</span>
+      <p><strong>It diagnoses your solution. It doesn't re-solve the problem.</strong> It respects your approach, finds the <em>first</em> line where it breaks, names the mistake, and asks a hint question. It never shows the corrected line or the final answer.</p>
+      <blockquote>"They re-solve the problem and hand me their solution. I want a diagnosis of mine."</blockquote>
+    </section>
+  </header>
+
+  <section aria-labelledby="loop-h">
+    <h2 id="loop-h">The core loop<small>Upload once, then confirm, check, and fix until it's clean.</small></h2>
+    <figure class="diagram" role="img" aria-label="Core loop: a student uploads a photo, confirms the transcribed lines, presses Check, gets ticks, one red cross with a hint, and greyed lines, edits the wrong line, and checks again until no mistakes are found.">
+      <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10z" style="fill: var(--ink-soft)"/>
+          </marker>
+          <marker id="arr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10z" style="fill: var(--red)"/>
+          </marker>
+        </defs>
+        <!-- student -->
+        <rect class="d-box" x="10" y="95" width="140" height="80" rx="10"/>
+        <text x="80" y="128" text-anchor="middle" font-weight="600">Student</text>
+        <text x="80" y="150" text-anchor="middle" class="d-small">wrong answer,</text>
+        <text x="80" y="165" text-anchor="middle" class="d-small">doesn't know why</text>
+        <path class="d-arrow" d="M150 135 H190" marker-end="url(#arr)"/>
+        <!-- photo -->
+        <rect class="d-box" x="195" y="95" width="140" height="80" rx="10"/>
+        <text x="265" y="128" text-anchor="middle" font-weight="600">1 · Photo</text>
+        <text x="265" y="150" text-anchor="middle" class="d-small">5–20 handwritten</text>
+        <text x="265" y="165" text-anchor="middle" class="d-small">math lines</text>
+        <path class="d-arrow" d="M335 135 H375" marker-end="url(#arr)"/>
+        <!-- transcribe -->
+        <rect class="d-box" x="380" y="95" width="150" height="80" rx="10"/>
+        <text x="455" y="128" text-anchor="middle" font-weight="600">2 · Confirm lines</text>
+        <text x="455" y="150" text-anchor="middle" class="d-small">numbered + editable;</text>
+        <text x="455" y="165" text-anchor="middle" class="d-small">fix misreads first</text>
+        <path class="d-arrow" d="M530 135 H570" marker-end="url(#arr)"/>
+        <!-- check -->
+        <rect class="d-box d-key" x="575" y="95" width="140" height="80" rx="10"/>
+        <text x="645" y="128" text-anchor="middle" font-weight="600">3 · Check</text>
+        <text x="645" y="150" text-anchor="middle" class="d-small">find the FIRST</text>
+        <text x="645" y="165" text-anchor="middle" class="d-small">line that breaks</text>
+        <path class="d-arrow" d="M715 135 H755" marker-end="url(#arr)"/>
+        <!-- verdict -->
+        <rect class="d-box" x="760" y="60" width="130" height="150" rx="10"/>
+        <text x="825" y="88" text-anchor="middle" font-weight="600">4 · Verdict</text>
+        <text x="780" y="118" class="d-hand" style="fill: var(--green) !important">✓ ✓ ✓ ✓</text>
+        <text x="780" y="146" class="d-hand">✗ + hint</text>
+        <text x="780" y="172" class="d-small">greyed: not checked</text>
+        <text x="780" y="196" class="d-small" style="fill: var(--green) !important">or "no mistakes"</text>
+        <!-- loop back -->
+        <path class="d-loop" d="M825 210 V260 H455 V180" marker-end="url(#arr-red)"/>
+        <text x="640" y="285" text-anchor="middle" class="d-hand">5 · edit the red line in the app, check again</text>
+        <!-- never -->
+        <text x="645" y="40" text-anchor="middle" class="d-small">never shows the corrected line or the final answer</text>
+        <path class="d-arrow" d="M645 48 V90" style="stroke-dasharray: 2 4"/>
+      </svg>
+    </figure>
+  </section>
+
+  <section aria-labelledby="demo-h">
+    <h2 id="demo-h">What "working" looks like<small>The one-minute demo, with a mistake planted on line 5. Step through it.</small></h2>
+    <div class="demo-controls" role="group" aria-label="Demo step">
+      <button class="step-btn" type="button" data-step="read" aria-pressed="true">① Lines read from photo</button>
+      <button class="step-btn" type="button" data-step="checked" aria-pressed="false">② Press Check</button>
+      <button class="step-btn" type="button" data-step="fix5" aria-pressed="false">③ Fix line 5, check again</button>
+      <button class="step-btn" type="button" data-step="fixed" aria-pressed="false">④ Fix line 6, check again</button>
+    </div>
+    <div class="notebook" id="notebook" aria-live="polite"></div>
+    <p class="demo-caption">The "oh, that's cool" beat: the app lands on exactly the planted line and explains it without giving the solution away. Viewers can see the verdict is right. Step ③ shows line 6 being flagged next: the app checks each line against the one before it, not against a known answer.</p>
+  </section>
+
+  <section aria-labelledby="who-h">
+    <h2 id="who-h">Who it's for, and why it matters</h2>
+    <div class="grid-2">
+      <div class="note">
+        <h3>Students practicing math</h3>
+        <p>Algebra, differentiation, integration, short derivations. Today, when an answer is wrong, they recheck from the top again and again and test examples. Sometimes every example works, "and that teaches me nothing."</p>
+      </div>
+      <div class="stack">
+        <div class="note">
+          <h3>The personal stake</h3>
+          <p>"An app that respects my idea, and even better, understands it, but still tells me where my reasoning broke."</p>
+        </div>
+        <div class="note">
+          <h3>Feel</h3>
+          <p>"A teacher marking my notebook with a red pen, but clean and minimal."</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="bound-h">
+    <h2 id="bound-h">The boundary<small>Open each list.</small></h2>
+    <details class="now" open>
+      <summary>Now: the proof of concept <span class="count">5 items</span></summary>
+      <ul>
+        <li>One photo of a handwritten <strong>math</strong> solution</li>
+        <li>Transcription into numbered, editable lines, confirmed before checking</li>
+        <li>A check that finds the <strong>first</strong> wrong line: ticks before it, a red cross on it with the kind of mistake and a hint question, "not checked" after it</li>
+        <li>A clear "all correct" result</li>
+        <li>Re-checking after editing a line in the app</li>
+      </ul>
+    </details>
+    <details class="later">
+      <summary>Later: if the math version works <span class="count">4 items</span></summary>
+      <ul>
+        <li>Coding solutions <em>— the mistake is often an idea spread over several lines</em></li>
+        <li>Re-uploading a corrected photo</li>
+        <li>More hints when the student is still stuck</li>
+        <li>History of past checks, to see which kinds of mistakes come up most</li>
+      </ul>
+    </details>
+    <details class="cut">
+      <summary>Cut <span class="count">7 items</span></summary>
+      <ul>
+        <li class="forever">Showing the correct solution or final answer <em>— permanently, because it defeats the kernel</em></li>
+        <li>Accounts and login <em>— not needed to prove the diagnosis</em></li>
+        <li>Saved history <em>— moved to Later</em></li>
+        <li>Typing a solution from scratch <em>— the photo is the real workflow, and editing covers fixes</em></li>
+        <li>Multiple photos or pages, PDF upload <em>— one photo of 5–20 lines proves it</em></li>
+        <li>Mobile app <em>— a web page is enough for the demo</em></li>
+        <li>Coding problems in this version <em>— math's "line N follows from line N−1" is checkable first</em></li>
+      </ul>
+    </details>
+  </section>
+
+  <section aria-labelledby="oq-h">
+    <h2 id="oq-h">Open for the PRD</h2>
+    <div class="open-q">
+      <ul>
+        <li>Does the student give the problem statement separately, or is it read from the first line of the photo?</li>
+        <li>The project name. "Red Pen" is only a placeholder.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>This page is a companion view. <code>devpost/scope.md</code> is the canonical plan.</footer>
+</main>
+
+<script>
+  const LINES = [
+    { text: "I = ∫ x·cos x dx" },
+    { text: "u = x,  dv = cos x dx" },
+    { text: "du = dx,  v = sin x" },
+    { text: "I = x·sin x − ∫ sin x dx" },
+    { text: "∫ sin x dx = cos x", fixed: "∫ sin x dx = −cos x", fixedAt: "fix5" },
+    { text: "I = x·sin x − cos x + C", fixed: "I = x·sin x + cos x + C", fixedAt: "fixed" },
+  ];
+  const STEP_ORDER = ["read", "checked", "fix5", "fixed"];
+  // Index of the first wrong line at each step (null = all correct / not checked yet).
+  const BAD_AT = { read: null, checked: 4, fix5: 5, fixed: null };
+  const FEEDBACK = {
+    4: { kind: "Sign error while integrating.", hint: "What do you get when you differentiate cos x?" },
+    5: { kind: "Line 6 doesn't follow from lines 4 and 5.", hint: "Substitute your line 5 into line 4. What happens to the sign when you subtract a negative?" },
+  };
+
+  function isFixed(line, step) {
+    return Boolean(line.fixedAt) && STEP_ORDER.indexOf(step) >= STEP_ORDER.indexOf(line.fixedAt);
+  }
+
+  function lineState(step, i) {
+    if (step === "read") return "plain";
+    const bad = BAD_AT[step];
+    if (bad === null || i < bad) return "ok";
+    return i === bad ? "bad" : "skip";
+  }
+
+  function buildLine(line, i, step) {
+    const state = lineState(step, i);
+    const row = document.createElement("div");
+    row.className = "nb-line " + state;
+    const num = document.createElement("span");
+    num.className = "nb-num";
+    num.textContent = i + 1;
+    const mark = document.createElement("span");
+    mark.className = "nb-mark";
+    mark.textContent = state === "ok" ? "✓" : state === "bad" ? "✗" : "";
+    const text = document.createElement("span");
+    text.className = "nb-text";
+    text.textContent = isFixed(line, step) ? line.fixed : line.text;
+    row.append(num, mark, text);
+    return row;
+  }
+
+  function buildFeedback({ kind, hint }) {
+    const box = document.createElement("div");
+    box.className = "feedback";
+    const kindEl = document.createElement("p");
+    const strong = document.createElement("strong");
+    strong.textContent = kind;
+    kindEl.append(strong);
+    const hintEl = document.createElement("p");
+    const tag = document.createElement("span");
+    tag.className = "hint-tag";
+    tag.textContent = "Hint: ";
+    hintEl.append(tag, hint);
+    box.append(kindEl, hintEl);
+    return box;
+  }
+
+  function render(step) {
+    const nb = document.getElementById("notebook");
+    nb.replaceChildren();
+    LINES.forEach((line, i) => {
+      nb.append(buildLine(line, i, step));
+      if (i === BAD_AT[step]) nb.append(buildFeedback(FEEDBACK[i]));
+    });
+    if (step === "fixed") {
+      const v = document.createElement("p");
+      v.className = "verdict ok";
+      v.textContent = "No mistakes. Every line follows.";
+      nb.append(v);
+    }
+    document.querySelectorAll(".step-btn").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.step === step)));
+  }
+
+  document.querySelectorAll(".step-btn").forEach(b =>
+    b.addEventListener("click", () => render(b.dataset.step)));
+  render("read");
+</script>
+</body>
+</html>

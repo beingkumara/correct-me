@@ -1,0 +1,18 @@
+{
+  "name": "correct-me",
+  "version": "0.1.0",
+  "description": "Upload a photo of your handwritten math working; Correct Me finds the first line where it went wrong, without solving it for you.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "start": "node --env-file=.env server/index.js",
+    "test": "node --test",
+    "reality-check": "node --env-file=.env scripts/reality-check.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

@@ -1,0 +1,13 @@
+# Personal learning context (kept out of the public repo)
+/devpost/learner-profile.md
+
+# Local credentials
+.env
+.env.*
+!.env.example
+
+.DS_Store
+node_modules/
+
+# Leak-guard logs (local only)
+logs/

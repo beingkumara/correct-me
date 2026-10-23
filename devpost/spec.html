@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Correct Me Spec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;550;650&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f8f3e6; --paper-raised: #fdf9ef; --rule: #c9d8ea; --margin-line: #e3a5a5;
+    --ink: #1f2a3a; --ink-soft: #5f6878; --red: #c3202c; --green: #237a4b; --amber: #b7791f;
+    --blue: #2f5d8a; --pencil: #a2a7ae; --line-edge: #e4dccb;
+    --font-math: "STIX Two Text", Georgia, serif;
+    --font-hand: "Caveat", "Bradley Hand", cursive;
+    --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+    --font-code: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --space-section: clamp(2.5rem, 2rem + 3vw, 4.5rem);
+    --radius: 8px; --duration: 200ms;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #191a1d; --paper-raised: #212329; --rule: #2b3442; --margin-line: #5c2d31;
+      --ink: #ebe6da; --ink-soft: #a5acb8; --red: #ff6f6f; --green: #62d39b; --amber: #f0b45a;
+      --blue: #8db8e8; --pencil: #6d737c; --line-edge: #30333a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #191a1d; --paper-raised: #212329; --rule: #2b3442; --margin-line: #5c2d31;
+    --ink: #ebe6da; --ink-soft: #a5acb8; --red: #ff6f6f; --green: #62d39b; --amber: #f0b45a;
+    --blue: #8db8e8; --pencil: #6d737c; --line-edge: #30333a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-ui); }
+  main { max-width: 1080px; margin: 0 auto; padding: 0 16px 4rem; }
+  code, .mono { font-family: var(--font-code); font-size: 0.86em; }
+  .eyebrow { font: 650 0.74rem/1 var(--font-ui); letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-soft); }
+  header.hero { padding: var(--space-section) 0 2rem; border-bottom: 2px solid var(--margin-line); }
+  h1 { font: 600 clamp(2.6rem, 1.6rem + 5vw, 4.8rem)/1 var(--font-math); margin: 0.6rem 0 1rem; }
+  h1 em { font: 700 0.6em var(--font-hand); color: var(--red); font-style: normal; margin-left: 0.3rem; }
+  .plain { display: grid; gap: 1rem; grid-template-columns: 1fr; margin-top: 1.4rem; }
+  @media (min-width: 820px) { .plain { grid-template-columns: repeat(3, 1fr); } }
+  .piece { background: var(--paper-raised); border: 1px solid var(--line-edge); border-radius: var(--radius); padding: 1rem 1.1rem; border-top: 4px solid var(--c); }
+  .piece h3 { margin: 0 0 0.3rem; font: 600 1.15rem var(--font-math); }
+  .piece p { margin: 0; color: var(--ink-soft); font-size: 0.95rem; }
+  .quote { font: 700 1.45rem/1.3 var(--font-hand); color: var(--red); margin: 1.4rem 0 0; }
+  h2 { font: 600 1.75rem/1.2 var(--font-math); margin: var(--space-section) 0 1rem; }
+  h2 small { display: block; font: 400 0.95rem var(--font-ui); color: var(--ink-soft); margin-top: 0.35rem; }
+
+  /* architecture */
+  .diagram { background: var(--paper-raised); border: 1px solid var(--line-edge); border-radius: var(--radius); padding: 0.8rem; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .diagram text { font-family: var(--font-ui); fill: var(--ink); font-size: 13px; }
+  .zone { fill: none; stroke-width: 1.5; stroke-dasharray: 5 4; }
+  .box { fill: var(--paper); stroke: var(--ink-soft); stroke-width: 1.2; transition: stroke var(--duration), stroke-width var(--duration); }
+  .box.on { stroke: var(--red); stroke-width: 3; }
+  .ztitle { font-weight: 650; font-size: 12px !important; letter-spacing: 0.08em; }
+  .file { font-family: var(--font-code) !important; font-size: 10.5px !important; fill: var(--ink-soft) !important; }
+  .e { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; }
+  .e.on { stroke: var(--red); stroke-width: 2.5; }
+  .lbl { font-size: 11px !important; fill: var(--ink-soft) !important; }
+  .secret { font-family: var(--font-hand) !important; font-size: 16px !important; fill: var(--red) !important; }
+
+  /* stepper */
+  .stepper { margin-top: 1rem; background: var(--paper-raised); border: 1px solid var(--line-edge); border-radius: var(--radius); padding: 1rem 1.2rem; }
+  .step-nav { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .dots { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+  .dot { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--line-edge); background: transparent; color: var(--ink); font: 550 0.8rem var(--font-ui); cursor: pointer; transition: transform var(--duration), background-color var(--duration); }
+  .dot:hover { transform: translateY(-1px); border-color: var(--ink-soft); }
+  .dot[aria-current="step"] { background: var(--red); color: #fff; border-color: var(--red); }
+  .dot:focus-visible, .nav-btn:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .nav-btn { font: 550 0.85rem var(--font-ui); border: 1.5px solid var(--ink-soft); background: transparent; color: var(--ink); border-radius: 6px; padding: 0.35rem 0.8rem; cursor: pointer; }
+  .step-body h3 { font: 600 1.3rem var(--font-math); margin: 0.9rem 0 0.2rem; }
+  .step-body p { margin: 0.2rem 0 0.5rem; }
+  .meta { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.85rem; color: var(--ink-soft); }
+  .meta b { color: var(--ink); font-weight: 550; }
+  pre { background: var(--paper); border: 1px solid var(--line-edge); border-radius: 6px; padding: 0.7rem 0.9rem; overflow-x: auto; font: 0.8rem/1.5 var(--font-code); margin: 0.5rem 0 0; }
+
+  /* guard demo */
+  .guard { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+  @media (min-width: 820px) { .guard { grid-template-columns: 1fr 1fr; } }
+  .card { background: var(--paper-raised); border: 1px solid var(--line-edge); border-radius: var(--radius); padding: 1rem 1.1rem; }
+  .card h3 { margin: 0 0 0.4rem; font: 600 1.1rem var(--font-math); }
+  .card ol, .card ul { margin: 0.2rem 0 0; padding-left: 1.2rem; }
+  .card li { margin: 0.25rem 0; }
+  label { font-size: 0.85rem; color: var(--ink-soft); display: block; margin-top: 0.5rem; }
+  input[type=text] { width: 100%; font: 1rem var(--font-math); padding: 0.45rem 0.6rem; border: 1px solid var(--line-edge); border-radius: 6px; background: var(--paper); color: var(--ink); }
+  input[type=text]:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+  .verdict-out { margin-top: 0.8rem; font: 700 1.3rem/1.25 var(--font-hand); }
+  .verdict-out.hit { color: var(--red); }
+  .verdict-out.pass { color: var(--green); }
+  .verdict-out small { display: block; font: 0.8rem var(--font-code); color: var(--ink-soft); margin-top: 0.3rem; word-break: break-all; }
+
+  /* reveals */
+  details { background: var(--paper-raised); border: 1px solid var(--line-edge); border-left: 4px solid var(--accent, var(--ink-soft)); border-radius: 6px; margin-bottom: 0.6rem; }
+  summary { cursor: pointer; list-style: none; padding: 0.8rem 1.1rem; display: flex; gap: 0.8rem; align-items: baseline; flex-wrap: wrap; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; margin-left: auto; font: 400 1.3rem var(--font-ui); color: var(--ink-soft); transition: transform var(--duration); }
+  details[open] summary::after { transform: rotate(45deg); }
+  summary:focus-visible { outline: 3px solid var(--red); outline-offset: -3px; }
+  summary b { font: 600 1.05rem var(--font-math); }
+  summary .f { font: 0.78rem var(--font-code); color: var(--ink-soft); }
+  .d-body { padding: 0 1.2rem 1rem; }
+  .d-body p { margin: 0.2rem 0 0.4rem; }
+  .prd { font-size: 0.82rem; color: var(--blue); }
+  .page { --accent: var(--blue); } .srv { --accent: var(--ink); } .rule { --accent: var(--red); } .ai { --accent: var(--amber); }
+  .tree { background: var(--paper-raised); border: 1px solid var(--line-edge); border-radius: var(--radius); padding: 1rem; font: 0.8rem/1.6 var(--font-code); overflow-x: auto; white-space: pre; }
+  .tree .c { color: var(--ink-soft); }
+  .tree .k { color: var(--red); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line-edge); vertical-align: top; }
+  th { font: 650 0.75rem var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .tag { display: inline-block; font: 650 0.68rem var(--font-ui); padding: 0.1rem 0.45rem; border-radius: 999px; border: 1px solid currentColor; }
+  .tag.prev { color: var(--amber); } .tag.prod { color: var(--green); }
+  .unknown { border: 1.5px dashed var(--red); border-radius: var(--radius); padding: 1rem 1.2rem; }
+  .unknown ol { margin: 0.4rem 0; padding-left: 1.3rem; }
+  .run { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+  @media (min-width: 820px) { .run { grid-template-columns: 1fr 1fr; } }
+  footer { margin-top: var(--space-section); color: var(--ink-soft); font-size: 0.85rem; }
+  .scroll { overflow-x: auto; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <span class="eyebrow">Technical spec · Build With AI: Basics · approved</span>
+    <h1>Correct Me <em>blueprint</em></h1>
+    <p style="max-width:62ch;margin:0">Three pieces: a plain page, a small server that keeps the key, and your rules written as code. The AI only <em>judges</em> lines. The code <em>enforces</em> everything your PRD promises.</p>
+    <div class="plain">
+      <div class="piece" style="--c: var(--blue)"><h3>The page</h3><p>Plain HTML/CSS/JS. Shrinks the photo, shows lines and marks, and keeps your session in memory so a failure never loses work.</p></div>
+      <div class="piece" style="--c: var(--ink)"><h3>The server</h3><p>Node + Express on your laptop. Holds the Groq key in <code>.env</code>. Two routes: <code>/api/read</code> and <code>/api/check</code>.</p></div>
+      <div class="piece" style="--c: var(--red)"><h3>Your rules, as code</h3><p>Validate every reply, guard against leaks, apply first-wrong and unsure rules, and strip the private answer before anything leaves.</p></div>
+    </div>
+    <p class="quote">"The prompt can't forget a rule if the rule isn't in the prompt."</p>
+  </header>
+
+  <section aria-labelledby="arch-h">
+    <h2 id="arch-h">Architecture, step by step<small>Use the stepper to trace one check through the system. The active pieces light up red.</small></h2>
+    <figure class="diagram" role="img" aria-label="Architecture: the browser page (state, image shrinker, render, api client) talks to the Express server on localhost. The server's model gateway calls Groq: the Qwen 3.8 27B reader with the photo, and GPT-OSS 120B checker with the text lines. Replies pass through the validator, leak guard, and rules before a stripped response goes back to the page.">
+      <svg viewBox="0 0 980 420" xmlns="http://www.w3.org/2000/svg" id="arch">
+        <defs>
+          <marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill: var(--ink-soft)"/></marker>
+        </defs>
+        <!-- zones -->
+        <rect class="zone" x="8" y="20" width="250" height="390" rx="12" style="stroke: var(--blue)"/>
+        <text x="22" y="42" class="ztitle" style="fill: var(--blue)">BROWSER · public/</text>
+        <rect class="zone" x="300" y="20" width="440" height="390" rx="12" style="stroke: var(--ink-soft)"/>
+        <text x="314" y="42" class="ztitle">SERVER · localhost:3000 · server/</text>
+        <rect class="zone" x="780" y="20" width="192" height="390" rx="12" style="stroke: var(--amber)"/>
+        <text x="794" y="42" class="ztitle" style="fill: var(--amber)">GROQ API</text>
+
+        <!-- browser boxes -->
+        <rect class="box" data-k="image" x="28" y="60" width="210" height="54" rx="8"/>
+        <text x="40" y="83" font-weight="600">Image shrinker</text><text x="40" y="102" class="file">image.js · ≤1600px JPEG</text>
+        <rect class="box" data-k="state" x="28" y="130" width="210" height="54" rx="8"/>
+        <text x="40" y="153" font-weight="600">Session state</text><text x="40" y="172" class="file">state.js · in memory only</text>
+        <rect class="box" data-k="render" x="28" y="200" width="210" height="54" rx="8"/>
+        <text x="40" y="223" font-weight="600">Lines, marks, notes</text><text x="40" y="242" class="file">render.js · app.js</text>
+        <rect class="box" data-k="api" x="28" y="300" width="210" height="54" rx="8"/>
+        <text x="40" y="323" font-weight="600">API client</text><text x="40" y="342" class="file">api.js · 45s timeout</text>
+
+        <!-- server boxes -->
+        <rect class="box" data-k="routes" x="320" y="300" width="180" height="54" rx="8"/>
+        <text x="332" y="323" font-weight="600">Routes + input checks</text><text x="332" y="342" class="file">index.js</text>
+        <rect class="box" data-k="llm" x="540" y="300" width="180" height="54" rx="8"/>
+        <text x="552" y="323" font-weight="600">Model gateway</text><text x="552" y="342" class="file">llm.js · prompts.js</text>
+        <rect class="box" data-k="validate" x="540" y="200" width="180" height="54" rx="8"/>
+        <text x="552" y="223" font-weight="600">Reply validator</text><text x="552" y="242" class="file">validate.js</text>
+        <rect class="box" data-k="guard" x="540" y="110" width="180" height="62" rx="8"/>
+        <text x="552" y="133" font-weight="600">Leak guard</text><text x="552" y="150" class="file">leakGuard.js</text><text x="552" y="166" class="file">→ logs/leak-guard.jsonl</text>
+        <rect class="box" data-k="rules" x="320" y="110" width="180" height="62" rx="8"/>
+        <text x="332" y="133" font-weight="600">Verdict rules</text><text x="332" y="150" class="file">rules.js</text><text x="332" y="166" class="file">first ✗ · unsure · result</text>
+        <text x="332" y="205" class="secret">strip correctedLine,</text>
+        <text x="332" y="225" class="secret">finalAnswer</text>
+
+        <!-- groq -->
+        <rect class="box" data-k="reader" x="796" y="190" width="160" height="70" rx="8"/>
+        <text x="808" y="213" font-weight="600">Reader</text><text x="808" y="231" class="file">qwen/qwen3.8-27b</text><text x="808" y="248" class="lbl">vision · preview</text>
+        <rect class="box" data-k="checker" x="796" y="290" width="160" height="70" rx="8"/>
+        <text x="808" y="313" font-weight="600">Checker</text><text x="808" y="331" class="file">openai/gpt-oss-120b</text><text x="808" y="348" class="lbl">reasoning · production</text>
+
+        <!-- edges -->
+        <path class="e" data-k="e-up" d="M238 327H315" marker-end="url(#m)"/>
+        <path class="e" data-k="e-gw" d="M500 327H535" marker-end="url(#m)"/>
+        <path class="e" data-k="e-read" d="M720 316C760 300 760 240 791 228" marker-end="url(#m)"/>
+        <path class="e" data-k="e-check" d="M720 334H791" marker-end="url(#m)"/>
+        <path class="e" data-k="e-val" d="M630 300V259" marker-end="url(#m)"/>
+        <path class="e" data-k="e-guard" d="M630 200V177" marker-end="url(#m)"/>
+        <path class="e" data-k="e-rules" d="M540 141H505" marker-end="url(#m)"/>
+        <path class="e" data-k="e-back" d="M320 141C280 141 280 227 243 227" marker-end="url(#m)"/>
+        <path class="e" data-k="e-readback" d="M540 227C420 227 420 260 243 240" marker-end="url(#m)" style="stroke-dasharray: 4 4"/>
+        <text x="372" y="262" class="lbl">read result</text>
+        <path class="e" data-k="e-shrink" d="M133 114V125" marker-end="url(#m)"/>
+        <path class="e" data-k="e-state" d="M133 184V195" marker-end="url(#m)"/>
+        <path class="e" data-k="e-call" d="M133 254V295" marker-end="url(#m)"/>
+        <text x="20" y="400" class="lbl">key never leaves .env → never in the browser</text>
+      </svg>
+    </figure>
+
+    <div class="stepper" aria-labelledby="stepper-title">
+      <div class="step-nav">
+        <button class="nav-btn" type="button" id="prev">← Back</button>
+        <div class="dots" id="dots" role="group" aria-label="Journey steps"></div>
+        <button class="nav-btn" type="button" id="next">Next →</button>
+      </div>
+      <div class="step-body" id="step-body" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="guard-h">
+    <h2 id="guard-h">Try the leak guard<small>A live copy of the matching rules in the spec. Edit the private answer or the hint and watch what gets caught.</small></h2>
+    <div class="guard">
+      <div class="card">
+        <h3>Private reference <span class="lbl">(never sent to the browser)</span></h3>
+        <label for="g-corr">correctedLine</label>
+        <input type="text" id="g-corr" value="∫ sin x dx = −cos x">
+        <label for="g-final">finalAnswer</label>
+        <input type="text" id="g-final" value="I = x·sin x + cos x + C">
+        <h3 style="margin-top:1rem">Model's hint for line 5</h3>
+        <label for="g-hint">hint (or note)</label>
+        <input type="text" id="g-hint" value="Close! It should be -cos x.">
+        <div class="verdict-out" id="g-out" aria-live="polite"></div>
+      </div>
+      <div class="card">
+        <h3>What it checks</h3>
+        <ol>
+          <li><b>Fragments:</b> the corrected line, its right-hand side, the final answer, and its right-hand side. Each comes as written and without "+ C".</li>
+          <li><b>Normalize</b> both sides: lowercase, no spaces, <code>· × ∙ ⋅ *</code> removed (so <code>x·sin x</code> = <code>x sin x</code>), <code>− – — ‐ -</code> → <code>-</code>, trailing <code>+c</code> removed.</li>
+          <li><b>Hit:</b> a fragment appears inside the note or hint.</li>
+          <li><b>Skip:</b> fragments under 3 characters (like <code>x</code>), which are logged as <code>skipped_short</code>.</li>
+          <li><b>On a hit:</b> a generic note and hint are shown, plus one JSON line in <code>logs/leak-guard.jsonl</code> with exactly what was caught.</li>
+        </ol>
+        <p class="lbl" style="margin-top:0.8rem">Accepted limit: a reworded leak ("the antiderivative of sin is negative cosine") gets past string matching. The logs tell you how often the model even tries.</p>
+        <p class="lbl">Try: "It should be − cos x" (caught) · "x sin x + cos x" (caught) · "What's the derivative of cos x?" (passes)</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="comp-h">
+    <h2 id="comp-h">Components<small>Each one has a home in a file and a PRD behavior it serves.</small></h2>
+    <div id="components"></div>
+  </section>
+
+  <section aria-labelledby="stack-h">
+    <h2 id="stack-h">Stack, verified 2026-10-23</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Piece</th><th>Choice</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Page</td><td>Plain HTML, CSS, ES modules</td><td>"A framework would only add weight." No build step.</td></tr>
+        <tr><td>Server</td><td>Node 20.6+ · Express 5</td><td>Keeps the key in <code>.env</code> (<code>--env-file</code>, no dotenv)</td></tr>
+        <tr><td>Reader</td><td><code>qwen/qwen3.8-27b</code> <span class="tag prev">preview</span></td><td>Only open vision model on Groq. Swappable in <code>.env</code></td></tr>
+        <tr><td>Checker</td><td><code>openai/gpt-oss-120b</code> <span class="tag prod">production</span></td><td>Strongest text reasoning model on Groq. Strict JSON schema</td></tr>
+        <tr><td>Replies</td><td>Strict <code>json_schema</code></td><td>Groq forces the shape. <code>validate.js</code> still checks the meaning</td></tr>
+        <tr><td>Tests</td><td><code>node:test</code></td><td>Pure <code>rules</code>, <code>leakGuard</code>, <code>validate</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="lbl">To verify early: the free-tier rate limits (you'll check your console before the build), strict schema + image on Qwen (the docs disagree), and the 4 MB base64 cap (not in the current docs).</p>
+  </section>
+
+  <section aria-labelledby="files-h">
+    <h2 id="files-h">File structure</h2>
+<div class="tree">hackathon-project/
+├── public/                 <span class="c"># served as-is, no build step</span>
+│   ├── index.html
+│   ├── styles/ tokens.css · notebook.css · layout.css
+│   └── js/ app.js · state.js · render.js · api.js · image.js
+├── server/
+│   ├── index.js            <span class="c"># Express, /api/read, /api/check, input checks</span>
+│   ├── <span class="k">llm.js</span>              <span class="c"># the ONE module that talks to AI providers</span>
+│   ├── prompts.js          <span class="c"># prompts + JSON schemas (rules are NOT here)</span>
+│   ├── <span class="k">validate.js</span>         <span class="c"># bad reply → "Try again", never a verdict</span>
+│   ├── <span class="k">rules.js</span>            <span class="c"># first ✗ · unsure carry-on · result message</span>
+│   └── <span class="k">leakGuard.js</span>        <span class="c"># catch, replace, log, strip private fields</span>
+├── scripts/reality-check.js <span class="c"># step 1: your photo → raw replies + final result</span>
+├── test/ rules · leakGuard · validate .test.js
+├── samples/                <span class="c"># planted-mistake photo (committed: shows the real input)</span>
+├── logs/                   <span class="c"># leak-guard.jsonl (gitignored)</span>
+├── .env.example · package.json · README.md
+└── devpost/</div>
+  </section>
+
+  <section aria-labelledby="run-h">
+    <h2 id="run-h">Run it, record it</h2>
+    <div class="run">
+      <div class="card">
+        <h3>Start</h3>
+<pre>npm install
+cp .env.example .env   # add your Groq key
+npm start              # → http://localhost:3000
+npm test
+npm run reality-check samples/&lt;photo&gt;</pre>
+      </div>
+      <div class="card">
+        <h3>Demo recording</h3>
+        <ol>
+          <li>Upload the real ∫ x·cos x photo (sign error on line 5)</li>
+          <li>Confirm the lines → Check → ✗ on line 5 with a hint</li>
+          <li>Fix line 5 → Check again → ✗ on line 6</li>
+          <li>Fix line 6 → "No mistakes found."</li>
+        </ol>
+        <p class="lbl">Local only. Deploy only with spare time. The video and public repo are what's required.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="unk-h">
+    <h2 id="unk-h">The useful unknown</h2>
+    <div class="unknown">
+      <p><b>Can free open models actually do this job?</b> Read your handwriting, land on line 5, and say "unsure" honestly? That's your evaluating-AI-output goal, tested on your own app.</p>
+      <p><b>First build step:</b> <code>npm run reality-check</code> prints the raw model replies next to the final result. You need to see:</p>
+      <ol>
+        <li>All 6 lines read correctly, or the misreads marked "?"</li>
+        <li>Line 5 flagged, with a hint that doesn't give the fix away</li>
+        <li>After fixing line 5, line 6 flagged</li>
+        <li>Clean lines → the clean all-clear. Plus one ambiguous line to see whether "unsure" ever appears</li>
+      </ol>
+      <p class="lbl">If it falls short: tighten the prompts first, then swap a model in <code>.env</code>. No rewrite either way.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="simp-h">
+    <h2 id="simp-h">Simplified on purpose</h2>
+    <details class="rule"><summary><b>Plain Unicode math in text inputs</b><span class="f">instead of a LaTeX renderer and math editor</span></summary><div class="d-body"><p>STIX Two keeps it looking printed, and students edit simple text. Fractions read as <code>(x+1)/(x−1)</code>.</p></div></details>
+    <details class="rule"><summary><b>String-matching leak guard</b><span class="f">instead of a second AI review call</span></summary><div class="d-body"><p>Deterministic, free, and logged. An AI review plus a retry is for later.</p></div></details>
+    <details class="rule"><summary><b>Generic hint on a leak</b><span class="f">instead of retrying the check</span></summary><div class="d-body"><p>Your call: a retry API call comes later.</p></div></details>
+    <details class="rule"><summary><b>In-memory session</b><span class="f">instead of storage or a database</span></summary><div class="d-body"><p>The PRD saves nothing between visits.</p></div></details>
+    <details class="rule"><summary><b>OpenAI-compatible gateway</b><span class="f">Groq now, Gemini by an .env change</span></summary><div class="d-body"><p>Claude would need a small adapter in <code>llm.js</code>.</p></div></details>
+  </section>
+
+  <footer>This page is a companion view. <code>devpost/spec.md</code> is the canonical plan.</footer>
+</main>
+
+<script>
+  const STEPS = [
+    { t: "Upload & shrink", on: ["image", "state", "e-shrink", "e-state"], f: "public/js/image.js", prd: "Upload",
+      p: "The photo is drawn on a canvas, scaled so the long edge is ≤ 1600 px, and exported as a JPEG at 0.85. The page shows it right away with the red-pen sweep." },
+    { t: "Read request", on: ["api", "routes", "llm", "reader", "e-call", "e-up", "e-gw", "e-read"], f: "server/index.js → llm.js", prd: "Reading the Handwriting",
+      p: "POST /api/read with the data URL. The gateway sends the read prompt plus the image to the reader model with a strict JSON schema.",
+      code: '{ "status": "ok", "lines": [ { "text": "I = ∫ x·cos x dx", "confident": true }, … ] }' },
+    { t: "Validate read", on: ["validate", "e-val", "e-readback", "render"], f: "server/validate.js", prd: "States and Boundaries",
+      p: "The status must be ok, unreadable, or not_math, and the lines must be non-empty strings. Anything else is a bad_ai_reply, so the page shows Try again and keeps the photo. Unreadable or not_math shows the honest note." },
+    { t: "Confirm & edit", on: ["render", "state"], f: "render.js · state.js", prd: "Reading the Handwriting",
+      p: "Line 1 is labeled Question. Unconfident lines show \"?\". Edits change only the in-memory state, through pure with* updaters." },
+    { t: "Check request", on: ["api", "routes", "llm", "checker", "e-call", "e-up", "e-gw", "e-check"], f: "server/llm.js · prompts.js", prd: "Checking a Solution",
+      p: "POST /api/check with the CURRENT text lines, with no photo. The checker judges each line 2…N against the question and the lines before it: ok, wrong, or unsure.",
+      code: '{ "verdicts": [ { "line": 5, "status": "wrong", "note": "Sign error…", "hint": "What do you get when…" } ],\n  "correctedLine": "∫ sin x dx = −cos x", "finalAnswer": "I = x·sin x + cos x + C" }' },
+    { t: "Validate check", on: ["validate", "e-val"], f: "server/validate.js", prd: "States and Boundaries",
+      p: "There must be exactly N−1 verdicts for lines 2…N, in order, with valid statuses, and every wrong or unsure line needs a note. A mismatch shows Try again. Never a partial verdict." },
+    { t: "Leak guard", on: ["guard", "e-guard"], f: "server/leakGuard.js", prd: "Checking a Solution",
+      p: "Each note and hint is checked against the corrected line, its right-hand side, the final answer, and its right-hand side, after normalizing. A hit shows the generic hint and logs a JSON line." },
+    { t: "Apply your rules", on: ["rules", "e-rules"], f: "server/rules.js", prd: "Unsure Verdicts",
+      p: "Ticks until the first wrong line, then a cross and \"not checked\" below it. Checking carries on past unsure lines, and a later cross notes the assumption. The result is mistake, clear, or clear_with_unsure." },
+    { t: "Strip & respond", on: ["rules", "e-back", "render"], f: "server/index.js", prd: "Non-Goals",
+      p: "correctedLine and finalAnswer are deleted. The browser gets only marks, notes, hints, and the result.",
+      code: '{ "ok": true, "data": { "lines": [ … ], "result": { "kind": "mistake", "line": 5 } } }' },
+    { t: "Edit → Check again", on: ["render", "state", "api", "e-state", "e-call"], f: "public/js/app.js", prd: "Editing and Re-checking",
+      p: "Editing line k keeps the marks, labels the line \"edited\", fades k+1…N to \"needs re-check\", and changes the button to Check again. That re-runs from step 5, re-judged from the top. This is how line 6 gets flagged next." },
+  ];
+
+  const COMPONENTS = [
+    ["page", "Page Shell and Layout", "public/index.html · styles/*", "Header, upload box, and the two-column working view (stacked below 900 px). Cream paper, blue rules, red margin.", "Screens and Layout · Look and Feel"],
+    ["page", "Session State", "public/js/state.js", "{ phase, photoUrl, lines, verdict, editedFrom, failure, message }, in memory only, updated through pure functions.", "States and Boundaries"],
+    ["page", "Image Shrinker", "public/js/image.js", "createImageBitmap → canvas ≤ 1600 px → JPEG 0.85 data URL. An undecodable file (e.g. HEIC in Chrome) shows: I can't open this file type. Please upload a JPEG or PNG. Never the handwriting message.", "Upload"],
+    ["page", "API Client", "public/js/api.js", "fetch wrappers with a 45 s timeout. Every failure becomes a typed failure that shows Try again with the state untouched.", "States and Boundaries"],
+    ["page", "Lines Editor and Marks", "public/js/render.js", "Rows, ✓ ✗ (?), notes and hints in Caveat, \"not checked\", \"edited\", \"needs re-check\", result, and the button. textContent only.", "Reading · Checking · Unsure · Editing"],
+    ["page", "Page Controller", "public/js/app.js", "Upload → read → render. Edit → withEdit(k). Check → render. Try again repeats the last request.", "The Core Journey · Starting Over"],
+    ["srv", "Server and Routes", "server/index.js", "Static files plus /api/read and /api/check. Input checks (data:image URL; 2–40 lines ≤ 300 characters). Envelope { ok, data | error }.", "The Core Journey"],
+    ["ai", "Model Gateway", "server/llm.js", "chatJSON({ role, messages, schema }) → READER_* / CHECKER_* from .env → OpenAI-compatible /chat/completions, strict schema, 40 s timeout.", "Your swap requirement"],
+    ["ai", "Prompts", "server/prompts.js", "Read: transcribe exactly, mistakes included; never invent; flag unconfident lines. Check: judge each line against what came before; use \"unsure\" when unsure; never put the fix in a note or hint.", "Reading · Checking"],
+    ["rule", "Reply Validator", "server/validate.js", "Exactly N−1 verdicts, in order, with valid statuses and notes where needed. Otherwise bad_ai_reply.", "States and Boundaries"],
+    ["rule", "Verdict Rules", "server/rules.js", "Pure applyRules(): first ✗ stops; unsure carries on; assumption notes; clear / clear_with_unsure / mistake.", "Checking a Solution · Unsure Verdicts"],
+    ["rule", "Leak Guard", "server/leakGuard.js", "Normalize, find fragments, swap in generic text, log to logs/leak-guard.jsonl, delete private fields.", "Checking a Solution · Non-Goals"],
+  ];
+
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; };
+
+  let current = 0;
+  function show(i) {
+    current = Math.max(0, Math.min(STEPS.length - 1, i));
+    const s = STEPS[current];
+    document.querySelectorAll("#arch [data-k]").forEach(n => n.classList.toggle("on", s.on.includes(n.dataset.k)));
+    document.querySelectorAll(".dot").forEach((d, j) => { if (j === current) d.setAttribute("aria-current", "step"); else d.removeAttribute("aria-current"); });
+    const body = document.getElementById("step-body");
+    body.replaceChildren();
+    body.append(el("h3", "", (current + 1) + ". " + s.t), el("p", "", s.p));
+    const meta = el("div", "meta");
+    const f = el("span"); f.append(el("b", "", "File: "), document.createTextNode(s.f));
+    const r = el("span"); r.append(el("b", "", "PRD: "), document.createTextNode("prd.md › " + s.prd));
+    meta.append(f, r);
+    body.append(meta);
+    if (s.code) body.append(el("pre", "", s.code));
+    document.getElementById("prev").disabled = current === 0;
+    document.getElementById("next").disabled = current === STEPS.length - 1;
+  }
+  const dots = document.getElementById("dots");
+  STEPS.forEach((s, i) => {
+    const b = el("button", "dot", String(i + 1));
+    b.type = "button"; b.title = s.t; b.setAttribute("aria-label", "Step " + (i + 1) + ": " + s.t);
+    b.addEventListener("click", () => show(i));
+    dots.append(b);
+  });
+  document.getElementById("prev").addEventListener("click", () => show(current - 1));
+  document.getElementById("next").addEventListener("click", () => show(current + 1));
+  show(0);
+
+  const compBox = document.getElementById("components");
+  COMPONENTS.forEach(([cls, name, file, desc, prd]) => {
+    const d = el("details", cls);
+    const s = el("summary");
+    s.append(el("b", "", name), el("span", "f", file));
+    const body = el("div", "d-body");
+    body.append(el("p", "", desc), el("p", "prd", "prd.md › " + prd));
+    d.append(s, body);
+    compBox.append(d);
+  });
+
+  // Leak guard demo: same rules as the spec's Leak Guard section.
+  const MIN_FRAGMENT = 3;
+  const normalize = s => s.toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[·×∙⋅*]/g, "")
+    .replace(/[−–—‐-]/g, "-")
+    .replace(/\+c(onstant)?$/, "");
+  const rhs = s => (s.includes("=") ? s.slice(s.lastIndexOf("=") + 1) : s);
+  const dropC = s => s.replace(/\s*\+\s*(c|constant)\s*$/i, "");
+  function fragments(corrected, finalAns) {
+    const out = [];
+    [["correctedLine", corrected], ["finalAnswer", finalAns]].forEach(([name, v]) => {
+      if (!v) return;
+      [[name, v], [name + " RHS", rhs(v)]].forEach(([type, raw]) => {
+        out.push([type, raw], [type + " (no +C)", dropC(raw)]);
+      });
+    });
+    return out;
+  }
+  function runGuard() {
+    const hint = document.getElementById("g-hint").value;
+    const nh = normalize(hint);
+    const frs = fragments(document.getElementById("g-corr").value, document.getElementById("g-final").value);
+    const hit = frs.find(([, raw]) => { const n = normalize(raw); return n.length >= MIN_FRAGMENT && nh.includes(n); });
+    const out = document.getElementById("g-out");
+    out.replaceChildren();
+    if (hit) {
+      out.className = "verdict-out hit";
+      out.append(document.createTextNode("Caught → generic hint shown"));
+      out.append(el("small", "", JSON.stringify({ field: "hint", fragmentType: hit[0], fragment: hit[1].trim(), original: hint })));
+    } else {
+      out.className = "verdict-out pass";
+      out.append(document.createTextNode("Passes → shown to the student"));
+      const skipped = frs.filter(([, raw]) => normalize(raw).length < MIN_FRAGMENT).map(([t]) => t);
+      if (skipped.length) out.append(el("small", "", "skipped_short: " + skipped.join(", ")));
+    }
+  }
+  ["g-corr", "g-final", "g-hint"].forEach(id => document.getElementById(id).addEventListener("input", runGuard));
+  runGuard();
+</script>
+</body>
+</html>

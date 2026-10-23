@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Correct Me PRD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;550;650&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f8f3e6;
+    --paper-raised: #fdf9ef;
+    --rule: #c9d8ea;
+    --margin-line: #e3a5a5;
+    --ink: #1f2a3a;
+    --ink-soft: #5f6878;
+    --red: #c3202c;
+    --green: #237a4b;
+    --amber: #b7791f;
+    --pencil: #a2a7ae;
+    --line-edge: #e4dccb;
+    --font-math: "STIX Two Text", "Latin Modern Roman", "Cambria Math", Georgia, serif;
+    --font-hand: "Caveat", "Bradley Hand", "Segoe Print", cursive;
+    --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+    --space-section: clamp(2.5rem, 2rem + 3vw, 4.5rem);
+    --row-h: 46px;
+    --radius: 8px;
+    --duration: 200ms;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #191a1d; --paper-raised: #212329; --rule: #2b3442; --margin-line: #5c2d31;
+      --ink: #ebe6da; --ink-soft: #a5acb8; --red: #ff6f6f; --green: #62d39b; --amber: #f0b45a;
+      --pencil: #6d737c; --line-edge: #30333a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #191a1d; --paper-raised: #212329; --rule: #2b3442; --margin-line: #5c2d31;
+    --ink: #ebe6da; --ink-soft: #a5acb8; --red: #ff6f6f; --green: #62d39b; --amber: #f0b45a;
+    --pencil: #6d737c; --line-edge: #30333a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 var(--font-ui); }
+  main { max-width: 1060px; margin: 0 auto; padding: 0 16px 4rem; }
+  .eyebrow { font: 650 0.74rem/1 var(--font-ui); letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-soft); }
+
+  header.hero { padding: var(--space-section) 0 2rem; border-bottom: 2px solid var(--margin-line); }
+  h1 { font: 600 clamp(2.6rem, 1.6rem + 5vw, 4.8rem)/1 var(--font-math); margin: 0.6rem 0 0.8rem; letter-spacing: -0.01em; }
+  h1 em { font: 700 0.62em var(--font-hand); color: var(--red); font-style: normal; margin-left: 0.3rem; }
+  .promise { font: italic 1.2rem/1.5 var(--font-math); max-width: 52ch; margin: 0; }
+  .expand {
+    margin-top: 1.8rem; display: grid; gap: 0.8rem; grid-template-columns: 1fr;
+  }
+  @media (min-width: 760px) { .expand { grid-template-columns: 1fr auto 1.4fr; align-items: center; } }
+  .expand .was { color: var(--ink-soft); font-size: 0.95rem; }
+  .expand .arrow { font: 700 1.8rem var(--font-hand); color: var(--red); text-align: center; }
+  .expand .now { font-size: 0.95rem; }
+  h2 { font: 600 1.75rem/1.2 var(--font-math); margin: var(--space-section) 0 1rem; }
+  h2 small { display: block; font: 400 0.95rem var(--font-ui); color: var(--ink-soft); margin-top: 0.35rem; }
+
+  /* journey diagram */
+  .diagram { background: var(--paper-raised); border: 1px solid var(--line-edge); border-radius: var(--radius); padding: 1rem; overflow: hidden; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .diagram text { font-family: var(--font-ui); fill: var(--ink); font-size: 13px; }
+  .n-box { fill: var(--paper); stroke: var(--ink-soft); stroke-width: 1.3; }
+  .n-key { stroke: var(--red); stroke-width: 2.2; }
+  .n-err { stroke: var(--pencil); stroke-dasharray: 4 3; }
+  .e { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; }
+  .e-loop { stroke: var(--red); stroke-width: 1.8; fill: none; stroke-dasharray: 6 5; }
+  .hand { font-family: var(--font-hand) !important; font-size: 18px !important; fill: var(--red) !important; }
+  .small { font-size: 11.5px !important; fill: var(--ink-soft) !important; }
+
+  /* state explorer */
+  .explorer { display: grid; gap: 1.2rem; grid-template-columns: 1fr; }
+  @media (min-width: 900px) { .explorer { grid-template-columns: 220px 1fr; } }
+  .state-list { display: flex; flex-wrap: wrap; gap: 0.4rem; align-content: start; }
+  @media (min-width: 900px) { .state-list { flex-direction: column; flex-wrap: nowrap; } }
+  .state-btn {
+    font: 550 0.88rem var(--font-ui); text-align: left; padding: 0.5rem 0.8rem; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--line-edge); background: transparent; color: var(--ink);
+    transition: transform var(--duration), background-color var(--duration), border-color var(--duration);
+  }
+  .state-btn:hover { border-color: var(--ink-soft); transform: translateX(2px); }
+  .state-btn:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .state-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .state-btn .k { display: inline-block; width: 1.4rem; color: var(--ink-soft); }
+  .state-btn[aria-pressed="true"] .k { color: var(--paper); opacity: 0.7; }
+
+  .stage { display: grid; gap: 1rem; }
+  .mock {
+    background: var(--paper-raised); border: 1px solid var(--line-edge); border-radius: var(--radius);
+    padding: 1rem; display: grid; gap: 1rem; grid-template-columns: 1fr; min-height: 340px;
+  }
+  @media (min-width: 640px) { .mock.two { grid-template-columns: 0.8fr 1.2fr; } }
+  .photo {
+    position: relative; border-radius: 4px; overflow: hidden; min-height: 200px;
+    background: repeating-linear-gradient(to bottom, #f1ece0 0 21px, #d9e2ee 21px 22px);
+    border: 1px solid var(--line-edge); display: grid; place-items: center;
+  }
+  .photo .scribble { font: 500 1.05rem/1.55 var(--font-hand); color: #2f3d5a; padding: 0.8rem 1rem; transform: rotate(-1deg); white-space: pre; }
+  .photo .pen {
+    position: absolute; left: 0; right: 0; height: 2px; background: var(--red); top: 0;
+    box-shadow: 0 0 8px var(--red); animation: pen 2.4s ease-in-out infinite alternate;
+  }
+  @keyframes pen { from { transform: translateY(0); } to { transform: translateY(230px); } }
+  .photo .reading { position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; font: 550 0.85rem var(--font-ui); color: var(--ink); }
+  .upload {
+    border: 2px dashed var(--pencil); border-radius: var(--radius); min-height: 220px; display: grid; place-items: center;
+    text-align: center; color: var(--ink-soft); padding: 1rem;
+  }
+  .upload strong { display: block; color: var(--ink); font-size: 1.05rem; margin-bottom: 0.2rem; }
+  .mini-head { text-align: center; margin-bottom: 0.6rem; }
+  .mini-head b { font: 600 1.6rem var(--font-math); display: block; }
+  .mini-head i { font: italic 0.9rem var(--font-math); color: var(--ink-soft); }
+
+  .sheet {
+    position: relative; padding-left: 3.4rem;
+    background-image: repeating-linear-gradient(to bottom, transparent 0 calc(var(--row-h) - 1px), var(--rule) calc(var(--row-h) - 1px) var(--row-h));
+  }
+  .sheet::before { content: ""; position: absolute; left: 2.6rem; top: 0; bottom: 0; width: 2px; background: var(--margin-line); }
+  .row { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: var(--row-h); gap: 0.5rem; transition: opacity var(--duration); }
+  .row .num { position: absolute; left: -3.2rem; width: 1.2rem; text-align: right; font: 0.72rem var(--font-ui); color: var(--ink-soft); }
+  .row .mark { position: absolute; left: -2.15rem; width: 1.6rem; text-align: center; font: 700 1.5rem/1 var(--font-hand); }
+  .row .math { font: 1.12rem var(--font-math); }
+  .row .tag { font: 550 0.7rem var(--font-ui); color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .row.q .tag { color: var(--ink); }
+  .row.ok .mark { color: var(--green); }
+  .row.bad .mark { color: var(--red); }
+  .row.bad .math { text-decoration: underline wavy var(--red) 1.5px; text-underline-offset: 6px; }
+  .row.unsure .mark { color: var(--amber); }
+  .row.unsure .mark span { display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; border: 2px solid var(--amber); border-radius: 50%; font-size: 1.05rem; }
+  .row.skip, .row.recheck { opacity: 0.38; }
+  .row.readq .mark { color: var(--amber); font: 650 1rem var(--font-ui); }
+  .row.edited .tag { color: var(--red); }
+  .margin-note {
+    margin: 0.2rem 0 0.5rem; padding: 0.2rem 0 0.4rem 0.9rem; border-left: 2px solid var(--red);
+    font: 600 1.25rem/1.25 var(--font-hand); color: var(--red);
+  }
+  .margin-note.amber { border-color: var(--amber); color: var(--amber); }
+  .margin-note small { display: block; font-weight: 500; opacity: 0.9; }
+  .result { font: 700 1.6rem/1.2 var(--font-hand); margin: 0.8rem 0 0; }
+  .result.ok { color: var(--green); }
+  .result.amber { color: var(--amber); }
+  .result.red { color: var(--red); }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 0.9rem; }
+  .btn-red { font: 650 0.92rem var(--font-ui); background: var(--red); color: #fff; border: 0; border-radius: 6px; padding: 0.6rem 1.3rem; }
+  .link { font-size: 0.85rem; color: var(--ink-soft); text-decoration: underline; }
+  .err-banner { font: 0.88rem var(--font-ui); background: color-mix(in srgb, var(--red) 9%, transparent); border-radius: 6px; padding: 0.5rem 0.8rem; margin-bottom: 0.6rem; }
+
+  .stage-text h3 { font: 600 1.3rem var(--font-math); margin: 0 0 0.2rem; }
+  .stage-text p { margin: 0 0 0.6rem; color: var(--ink-soft); }
+  .criteria { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+  .criteria li { padding-left: 1.6rem; position: relative; }
+  .criteria li::before { content: "☐"; position: absolute; left: 0; color: var(--ink-soft); }
+  .criteria .src { font-size: 0.78rem; color: var(--ink-soft); }
+
+  /* reveals */
+  details { background: var(--paper-raised); border: 1px solid var(--line-edge); border-left: 4px solid var(--accent, var(--ink-soft)); border-radius: 6px; margin-bottom: 0.7rem; }
+  details.build { --accent: var(--green); }
+  details.defer { --accent: var(--amber); }
+  details.never { --accent: var(--red); }
+  details.decide { --accent: var(--ink); }
+  summary { cursor: pointer; list-style: none; padding: 0.9rem 1.1rem; font: 600 1.1rem var(--font-math); display: flex; gap: 1rem; align-items: baseline; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; margin-left: auto; font: 400 1.3rem var(--font-ui); color: var(--ink-soft); transition: transform var(--duration); }
+  details[open] summary::after { transform: rotate(45deg); }
+  summary:focus-visible { outline: 3px solid var(--red); outline-offset: -3px; }
+  summary .count { font: 400 0.82rem var(--font-ui); color: var(--ink-soft); }
+  details ul { margin: 0; padding: 0 1.3rem 1rem 2.4rem; }
+  details li { margin: 0.35rem 0; }
+  details li em { font-style: normal; color: var(--ink-soft); }
+  .open-q { border: 1.5px dashed var(--ink-soft); border-radius: 6px; padding: 1rem 1.2rem; }
+  .open-q p { margin: 0.3rem 0; }
+  .open-q b { color: var(--red); }
+  footer { margin-top: var(--space-section); color: var(--ink-soft); font-size: 0.85rem; }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+    .photo .pen { animation: none; top: 45%; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <span class="eyebrow">Product requirements · Build With AI: Basics · approved</span>
+    <h1>Correct Me <em>PRD</em></h1>
+    <p class="promise">"Upload your handwritten working. I'll check your solution, and if it's wrong, I'll find where it went wrong, but I won't solve it for you."</p>
+    <div class="expand">
+      <div class="was"><span class="eyebrow">Scope said</span><br>"Mark the first wrong line, with a hint, never the answer."</div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="now"><span class="eyebrow">Now we know</span><br>How the page reads a photo, what happens when the app is <strong>unsure</strong>, how an edit fades only the lines below it, what survives a failure, and exactly how each mark looks.</div>
+    </div>
+  </header>
+
+  <section aria-labelledby="journey-h">
+    <h2 id="journey-h">The core journey<small>One page, moving through states. The red dashed path is the fix-and-recheck loop.</small></h2>
+    <figure class="diagram" role="img" aria-label="Journey: upload one photo, the photo appears with the reading animation, then either numbered editable lines appear, or an unreadable or not-math note offers another upload. From the lines the student presses Check, gets a verdict, edits any line so the lines below fade, and checks again until no mistakes are found. A failure at any point keeps the photo and edits and offers Try again.">
+      <svg viewBox="0 0 960 330" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill: var(--ink-soft)"/></marker>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill: var(--red)"/></marker>
+        </defs>
+        <rect class="n-box" x="10" y="110" width="120" height="70" rx="8"/>
+        <text x="70" y="140" text-anchor="middle" font-weight="650">Upload</text>
+        <text x="70" y="160" text-anchor="middle" class="small">one photo</text>
+        <path class="e" d="M130 145H165" marker-end="url(#a)"/>
+
+        <rect class="n-box" x="170" y="110" width="140" height="70" rx="8"/>
+        <text x="240" y="140" text-anchor="middle" font-weight="650">Reading…</text>
+        <text x="240" y="160" text-anchor="middle" class="small">photo + red-pen sweep</text>
+        <path class="e" d="M310 145H345" marker-end="url(#a)"/>
+        <path class="e" d="M240 180V245" marker-end="url(#a)"/>
+
+        <rect class="n-box n-err" x="150" y="250" width="180" height="62" rx="8"/>
+        <text x="240" y="276" text-anchor="middle" font-weight="650">Can't read / not math</text>
+        <text x="240" y="296" text-anchor="middle" class="small">honest note + upload another</text>
+
+        <rect class="n-box" x="350" y="110" width="150" height="70" rx="8"/>
+        <text x="425" y="135" text-anchor="middle" font-weight="650">Confirm lines</text>
+        <text x="425" y="153" text-anchor="middle" class="small">line 1 = question</text>
+        <text x="425" y="168" text-anchor="middle" class="small">"?" on unclear reads</text>
+        <path class="e" d="M500 145H535" marker-end="url(#a)"/>
+
+        <rect class="n-box n-key" x="540" y="110" width="120" height="70" rx="8"/>
+        <text x="600" y="140" text-anchor="middle" font-weight="650">Check</text>
+        <text x="600" y="160" text-anchor="middle" class="small">from the top</text>
+        <path class="e" d="M660 145H695" marker-end="url(#a)"/>
+
+        <rect class="n-box" x="700" y="40" width="250" height="210" rx="8"/>
+        <text x="825" y="66" text-anchor="middle" font-weight="650">Verdict</text>
+        <text x="720" y="98" class="hand" style="fill: var(--green) !important">✓ ✓ ✓</text>
+        <text x="790" y="98" class="small">confident ticks</text>
+        <text x="720" y="128" class="hand">✗</text>
+        <text x="745" y="128" class="small">first wrong line: note + hint</text>
+        <text x="720" y="158" class="hand" style="fill: var(--amber) !important">(?)</text>
+        <text x="755" y="158" class="small">unsure: carry on, say so</text>
+        <text x="720" y="186" class="small">greyed: not checked</text>
+        <text x="720" y="214" class="hand" style="fill: var(--green) !important">No mistakes found.</text>
+        <text x="720" y="236" class="small">(clean only if every tick is confident)</text>
+
+        <path class="e-loop" d="M825 250V300H425V185" marker-end="url(#ar)"/>
+        <text x="625" y="322" text-anchor="middle" class="hand">edit any line → lines below fade → Check again</text>
+
+        <text x="480" y="30" text-anchor="middle" class="small">any failure (no internet, AI error): photo + edits stay · "Try again"</text>
+        <path class="e" d="M480 38V100" style="stroke-dasharray: 2 4"/>
+      </svg>
+    </figure>
+  </section>
+
+  <section aria-labelledby="states-h">
+    <h2 id="states-h">Every state, on the page<small>Pick a state to see the mock, what happens, and how we'll know it works.</small></h2>
+    <div class="explorer">
+      <div class="state-list" role="group" aria-label="Choose a state" id="state-list"></div>
+      <div class="stage">
+        <div class="mock" id="mock" aria-live="polite"></div>
+        <div class="stage-text" id="stage-text"></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="look-h">
+    <h2 id="look-h">Look and feel<small>A good exercise book: Apple Notes and Notion, but calmer.</small></h2>
+    <div class="sheet" style="max-width:640px" aria-label="Look and feel sample">
+      <div class="row q"><span class="num">1</span><span class="math">Student's work → clean printed math (STIX Two / Latin Modern)</span><span class="tag">Question</span></div>
+      <div class="row bad"><span class="num">2</span><span class="mark">✗</span><span class="math">Teacher's marks → red-pen handwriting (Caveat)</span><span></span></div>
+      <div class="margin-note">"Whose words are whose should be obvious at a glance."</div>
+      <div class="row ok"><span class="num">3</span><span class="mark">✓</span><span class="math">Warm cream paper · faint blue rules · thin red margin</span><span></span></div>
+      <div class="row unsure"><span class="num">4</span><span class="mark"><span>?</span></span><span class="math">Amber circled "?" = unsure, a teacher's "hmm?"</span><span></span></div>
+      <div class="row skip"><span class="num">5</span><span class="mark"></span><span class="math">Pencil grey = not checked / needs re-check</span><span class="tag">not checked</span></div>
+    </div>
+    <p style="color:var(--ink-soft);max-width:60ch">Plenty of space, no heavy shadows or gradients, one sans-serif for buttons and labels, and <strong>Check</strong> in red-pen color right under the last line. No spinner in the middle of a blank screen.</p>
+  </section>
+
+  <section aria-labelledby="split-h">
+    <h2 id="split-h">Decisions and boundaries<small>Open each list.</small></h2>
+    <details class="decide" open>
+      <summary>Your product decisions <span class="count">12</span></summary>
+      <ul>
+        <li><strong>"Try a sample" is Later</strong> <em>so build time goes to the core path and unsure behavior.</em></li>
+        <li><strong>Name: Correct Me.</strong></li>
+        <li><strong>Line 1 is the question.</strong> <em>No separate field; type it into line 1 if the photo lacks it.</em></li>
+        <li><strong>The photo stays beside the lines</strong> <em>so misreads are easy to spot.</em></li>
+        <li><strong>Marks persist while editing</strong> <em>"they'd lose the hint that helped them."</em></li>
+        <li><strong>An edit fades only the lines below it.</strong> <em>The ticks above stay valid.</em></li>
+        <li><strong>Any line is editable</strong>, <em>because the mistake or a misread may come earlier.</em></li>
+        <li><strong>Check again re-judges from the top</strong>, <em>which is why line 6 gets flagged next.</em></li>
+        <li><strong>Printed math for the student, red handwriting for the teacher.</strong></li>
+        <li><strong>Honesty over confidence:</strong> <em>"A confident wrong verdict is worse than an honest 'I'm not sure.'"</em></li>
+        <li><strong>Checking continues past an unsure line</strong> <em>and later verdicts state the assumption.</em></li>
+        <li><strong>No lost work on failure.</strong></li>
+      </ul>
+    </details>
+    <details class="build">
+      <summary>What we're building <span class="count">7</span></summary>
+      <ul>
+        <li>One-page app: start screen, upload, reading animation, two-column working view (stacked on narrow screens)</li>
+        <li>Transcription into numbered, editable, printed-math lines; line 1 as the question; "?" on unclear reads</li>
+        <li>First-wrong-line check: ticks, one red cross with a mistake note and a hint, "not checked", "No mistakes found."</li>
+        <li>Unsure verdicts: carry-on rule, assumption notes, caveated all-clear</li>
+        <li>Editing: "edited" and "needs re-check" marks, <strong>Check again</strong></li>
+        <li>Unopenable-file, unreadable, not-math, partly readable, and failure states, with no lost work</li>
+        <li>"Upload a different photo"</li>
+      </ul>
+    </details>
+    <details class="defer">
+      <summary>Deferred and later <span class="count">7</span></summary>
+      <ul>
+        <li>Coding solutions <em>— the mistake is often an idea spread over lines</em></li>
+        <li>Re-uploading a corrected photo <em>— fixes happen in the edit boxes for now</em></li>
+        <li>More hints when stuck <em>— one hint per flagged line for now</em></li>
+        <li>History / common-mistake patterns <em>— needs saved data, which was cut</em></li>
+        <li>Multiple photos, PDF upload <em>— one photo proves it</em></li>
+        <li>"Try a sample" link <em>— Later: build time goes to the core path + unsure behavior</em></li>
+        <li>Dedicated mobile app</li>
+      </ul>
+    </details>
+    <details class="never">
+      <summary>Non-goals <span class="count">5</span></summary>
+      <ul>
+        <li><strong>Never show the corrected line, a step's right value, or the final answer.</strong> <em>Permanent; it's the kernel.</em></li>
+        <li>No accounts or login</li>
+        <li>No typing a solution from scratch</li>
+        <li>No confident verdicts the app doesn't actually have</li>
+        <li>No subjects beyond math in this version</li>
+      </ul>
+    </details>
+  </section>
+
+  <section aria-labelledby="oq-h">
+    <h2 id="oq-h">Open questions</h2>
+    <div class="open-q">
+      <p><b>Resolved:</b> "Try a sample" stays in Later. The demo uses your own photo. The promise wording is fine for now.</p>
+    </div>
+  </section>
+
+  <footer>This page is a companion view. <code>devpost/prd.md</code> is the canonical plan.</footer>
+</main>
+
+<script>
+  const PHOTO_TEXT = "I = ∫ x cos x dx\nu = x , dv = cos x dx\ndu = dx , v = sin x\nI = x sin x − ∫ sin x dx\n∫ sin x dx = cos x\nI = x sin x − cos x + C";
+  const Q = "I = ∫ x·cos x dx";
+  const L2 = "u = x,  dv = cos x dx";
+  const L3 = "du = dx,  v = sin x";
+  const L4 = "I = x·sin x − ∫ sin x dx";
+  const L5_BAD = "∫ sin x dx = cos x";
+  const L5_OK = "∫ sin x dx = −cos x";
+  const L6_BAD = "I = x·sin x − cos x + C";
+  const L6_OK = "I = x·sin x + cos x + C";
+
+  const NOTE_L5 = { text: "Sign error while integrating.", hint: "What do you get when you differentiate cos x?" };
+  const NOTE_L6 = { text: "Doesn't follow from lines 4 and 5.", hint: "What happens to the sign when you subtract a negative?" };
+
+  const STATES = [
+    {
+      id: "start", label: "Start", kind: "start",
+      title: "First open",
+      desc: "The name, the one-line promise, and a large upload box. Nothing else competes with it.",
+      criteria: ["Name, promise, and upload box are visible", "Only one image can be uploaded at a time"],
+      src: "Screens and Layout · Upload",
+    },
+    {
+      id: "reading", label: "Reading", kind: "reading",
+      title: "Reading your problem…",
+      desc: "The photo appears right away. A red-pen line sweeps down it. No spinner on a blank screen.",
+      criteria: ["The photo appears immediately after upload", "\"Reading your problem...\" with the red-pen sweep, no blank-screen spinner"],
+      src: "Reading the Handwriting",
+    },
+    {
+      id: "ready", label: "Lines ready", button: "Check",
+      title: "Confirm what the app read",
+      desc: "The photo sits on the left and numbered printed-math lines on the right. Line 1 is the question. A line the app wasn't sure it read gets a \"?\" so the student can fix it before checking.",
+      rows: [
+        { t: Q, m: "q" }, { t: L2 }, { t: L3 }, { t: "I = x·sin x − ∫ sin x dk", m: "readq", tag: "not sure I read this right" }, { t: L5_BAD }, { t: L6_BAD },
+      ],
+      criteria: ["One editable row per handwritten line", "Line 1 is labeled as the question and never ticked or crossed", "Unclear reads show \"?\"", "No invented lines"],
+      src: "Reading the Handwriting",
+    },
+    {
+      id: "verdict", label: "Verdict", button: "Check",
+      title: "First wrong line found",
+      desc: "Ticks up to the mistake. A red cross on line 5 with a margin note and a hint question, never the fix. Lines below are \"not checked\".",
+      rows: [
+        { t: Q, m: "q" }, { t: L2, m: "ok" }, { t: L3, m: "ok" }, { t: L4, m: "ok" },
+        { t: L5_BAD, m: "bad", note: NOTE_L5 }, { t: L6_BAD, m: "skip", tag: "not checked" },
+      ],
+      criteria: ["Ticks only on confident lines before the mistake", "Red cross + mistake type + hint question", "No corrected line, step value, or final answer anywhere", "Lines below are \"not checked\""],
+      src: "Checking a Solution",
+    },
+    {
+      id: "editing", label: "Editing", button: "Check again",
+      title: "Fixing line 5",
+      desc: "The marks and the hint stay while the student types. Line 5 is marked \"edited\", line 6 fades to \"needs re-check\", ticks above stay solid, and the button becomes Check again.",
+      rows: [
+        { t: Q, m: "q" }, { t: L2, m: "ok" }, { t: L3, m: "ok" }, { t: L4, m: "ok" },
+        { t: L5_OK, m: "bad edited", tag: "edited", note: NOTE_L5 }, { t: L6_BAD, m: "recheck", tag: "needs re-check" },
+      ],
+      criteria: ["Marks and hint stay visible while editing", "Edited line shows \"edited\"", "Lines below fade to \"needs re-check\"; ticks above stay", "Button reads Check again", "Any line is editable, not only the red one"],
+      src: "Editing and Re-checking",
+    },
+    {
+      id: "recheck", label: "Check again", button: "Check",
+      title: "Line 6 is flagged next",
+      desc: "Re-judged from the top with the current text. Line 5 is now right, so line 6 no longer follows from it. This proves the app checks your lines, not a known answer.",
+      rows: [
+        { t: Q, m: "q" }, { t: L2, m: "ok" }, { t: L3, m: "ok" }, { t: L4, m: "ok" },
+        { t: L5_OK, m: "ok" }, { t: L6_BAD, m: "bad", note: NOTE_L6 },
+      ],
+      criteria: ["Check again re-judges every line from the top", "Line 6 is flagged after line 5 is fixed (demo)"],
+      src: "Checking a Solution · Editing and Re-checking",
+    },
+    {
+      id: "clear", label: "All clear", button: "Check",
+      title: "No mistakes found.",
+      desc: "Every line is a confident tick, so the all-clear is clean.",
+      rows: [
+        { t: Q, m: "q" }, { t: L2, m: "ok" }, { t: L3, m: "ok" }, { t: L4, m: "ok" }, { t: L5_OK, m: "ok" }, { t: L6_OK, m: "ok" },
+      ],
+      result: { text: "No mistakes found.", cls: "ok" },
+      criteria: ["A clean \"No mistakes found.\" only when every line is a confident tick"],
+      src: "Checking a Solution",
+    },
+    {
+      id: "unsure", label: "Unsure", button: "Check",
+      title: "The app isn't sure, and says so",
+      desc: "Line 3 gets an amber circled \"?\" (not red, not a cross). Checking carries on as if it were right, and the later red cross admits that assumption.",
+      rows: [
+        { t: Q, m: "q" }, { t: L2, m: "ok" },
+        { t: L3, m: "unsure", note: { text: "Not sure this follows from line 2. Worth checking yourself.", amber: true } },
+        { t: L4, m: "ok" },
+        { t: L5_BAD, m: "bad", note: { text: "Sign error while integrating.", hint: "What do you get when you differentiate cos x?", extra: "This assumes line 3 was right, which I wasn't sure about." } },
+        { t: L6_BAD, m: "skip", tag: "not checked" },
+      ],
+      criteria: ["Unsure = amber/grey circled \"?\" with a soft note, never an answer", "Checking continues past an unsure line", "A later cross states the assumption", "With no cross: \"No mistakes found, but I wasn't sure about line X. Check that one yourself.\""],
+      src: "Unsure Verdicts",
+    },
+    {
+      id: "unreadable", label: "Can't read / not math", kind: "message",
+      title: "Honest about the photo",
+      desc: "No lines and no half-guesses. Just a red handwritten note and one way forward.",
+      message: ["I can't read this page clearly. Try another photo in better light.", "This doesn't look like a math solution. Correct Me only checks math working for now."],
+      criteria: ["Unreadable: no lines appear, a note, and one upload-another button", "Not math: an honest note and the same option", "Partly readable: readable lines appear, unclear ones get \"?\""],
+      src: "States and Boundaries",
+    },
+    {
+      id: "filetype", label: "File can't be opened", kind: "message",
+      title: "Honest about the file",
+      desc: "The browser can't open the file (e.g. an iPhone HEIC photo in Chrome). The problem is the file, not the handwriting, so the app says exactly that. Added during 4-spec.",
+      message: ["I can't open this file type. Please upload a JPEG or PNG."],
+      criteria: ["An unopenable file shows \"I can't open this file type. Please upload a JPEG or PNG.\"", "It is never shown as a handwriting problem", "There is an upload-another option"],
+      src: "States and Boundaries",
+    },
+    {
+      id: "failure", label: "Failure", button: "Try again",
+      title: "Nothing is lost",
+      desc: "No internet or an AI error, during reading or checking. The photo and every edit stay exactly as they were.",
+      banner: "Couldn't reach the checker. Your photo and edits are safe.",
+      rows: [
+        { t: Q, m: "q" }, { t: L2 }, { t: L3 }, { t: L4 }, { t: L5_OK, m: "edited", tag: "edited" }, { t: L6_BAD },
+      ],
+      criteria: ["The photo and all edits survive the failure", "A message plus a Try again button"],
+      src: "States and Boundaries",
+    },
+  ];
+
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  function photo(reading) {
+    const p = el("div", "photo");
+    p.append(el("div", "scribble", PHOTO_TEXT));
+    if (reading) {
+      p.append(el("div", "pen"));
+      p.append(el("div", "reading", "Reading your problem..."));
+    }
+    return p;
+  }
+
+  function markFor(m) {
+    if (m.includes("ok")) return "✓";
+    if (m.includes("bad")) return "✗";
+    if (m.includes("readq")) return "?";
+    return "";
+  }
+
+  function noteEl(note) {
+    const n = el("div", "margin-note" + (note.amber ? " amber" : ""), note.text);
+    if (note.hint) n.append(el("small", "", note.hint));
+    if (note.extra) n.append(el("small", "", note.extra));
+    return n;
+  }
+
+  function sheet(rows) {
+    const s = el("div", "sheet");
+    rows.forEach((r, i) => {
+      const m = r.m || "";
+      const row = el("div", "row " + m);
+      row.append(el("span", "num", String(i + 1)));
+      const mark = el("span", "mark");
+      if (m.includes("unsure")) mark.append(el("span", "", "?"));
+      else mark.textContent = markFor(m);
+      row.append(mark, el("span", "math", r.t), el("span", "tag", m === "q" ? "Question" : r.tag || ""));
+      s.append(row);
+      if (r.note) s.append(noteEl(r.note));
+    });
+    return s;
+  }
+
+  function renderMock(st) {
+    const mock = document.getElementById("mock");
+    mock.replaceChildren();
+    mock.classList.toggle("two", st.kind !== "start" && st.kind !== "message");
+
+    if (st.kind === "start") {
+      const head = el("div", "mini-head");
+      head.append(el("b", "", "Correct Me"), el("i", "", "Upload your handwritten working. I'll find where it went wrong, but I won't solve it for you."));
+      const up = el("div", "upload");
+      const inner = el("div");
+      inner.append(el("strong", "", "Drop a photo of your working"), el("span", "", "one image · JPG or PNG"));
+      up.append(inner);
+      const col = el("div");
+      col.append(head, up);
+      mock.append(col);
+      return;
+    }
+    if (st.kind === "reading") {
+      mock.append(photo(true), el("div", "", ""));
+      return;
+    }
+    if (st.kind === "message") {
+      const col = el("div");
+      st.message.forEach(t => col.append(el("p", "result red", t)));
+      const a = el("div", "actions");
+      a.append(el("span", "btn-red", "Upload another photo"));
+      col.append(a);
+      mock.append(col);
+      return;
+    }
+    const right = el("div");
+    if (st.banner) right.append(el("div", "err-banner", st.banner));
+    right.append(sheet(st.rows));
+    if (st.result) right.append(el("p", "result " + st.result.cls, st.result.text));
+    const a = el("div", "actions");
+    a.append(el("span", "btn-red", st.button), el("span", "link", "Upload a different photo"));
+    right.append(a);
+    mock.append(photo(false), right);
+  }
+
+  function renderText(st) {
+    const box = document.getElementById("stage-text");
+    box.replaceChildren();
+    box.append(el("h3", "", st.title), el("p", "", st.desc));
+    const ul = el("ul", "criteria");
+    st.criteria.forEach(c => ul.append(el("li", "", c)));
+    box.append(ul, el("p", "src", "prd.md › " + st.src));
+  }
+
+  function select(id) {
+    const st = STATES.find(s => s.id === id);
+    renderMock(st);
+    renderText(st);
+    document.querySelectorAll(".state-btn").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.id === id)));
+  }
+
+  const list = document.getElementById("state-list");
+  STATES.forEach((s, i) => {
+    const b = el("button", "state-btn");
+    b.type = "button";
+    b.dataset.id = s.id;
+    b.append(el("span", "k", String(i + 1)), document.createTextNode(s.label));
+    b.addEventListener("click", () => select(s.id));
+    list.append(b);
+  });
+  select("verdict");
+</script>
+</body>
+</html>
