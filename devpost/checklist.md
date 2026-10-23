@@ -85,13 +85,13 @@ Learner's kick-the-tires (2026-10-23): full demo, a correct solution's "No mista
 ## Code Tour and App Map
 
 - [x] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
-- [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
+- [x] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
 - [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
 Activity and evidence: prior practice connected, not repeated. At the slice-2 checkpoint the learner evaluated raw reader/checker output from `npm run reality-check` on their own photo and fixtures, found the misread blamed on the student, "unsure" never appearing, and LaTeX private fields slipping past the guard, and concluded the checker's 0.96 confidence on the ambiguous `sin x²` line meant the decision had to live in code (`calibrate()` in `server/rules.js`, tests in `test/rules.test.js`).
 Route and stops: reference-only route in the app map (not toured live): `public/js/app.js` › `checkCurrentLines` → `server/check.js` › `checkLines` + `server/rules.js` › `calibrate`/`applyRules` → `public/js/render.js` › `renderAside`/`renderNote`.
 Edit outcome: not applicable (focused alternative via prior practice).
-Reflection: [offered/answered/declined/already covered — personal answer belongs only in the ignored profile]
+Reflection: offered and answered (recorded in the ignored learner profile).
 Activity mode: prior practice (focused alternative), plus the map.
 
 ## Revisions
