@@ -1,0 +1,187 @@
+/* The exercise book: cream paper, blue rules, red margin, printed student lines, handwritten teacher marks. */
+.notebook {
+  position: relative;
+  min-height: calc(var(--row-h) * 8);
+  padding: calc(var(--row-h) * 0.5) 1.25rem calc(var(--row-h) * 1) var(--margin-x);
+  background-color: var(--paper);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--row-h) - 1px),
+    var(--rule) calc(var(--row-h) - 1px),
+    var(--rule) var(--row-h)
+  );
+  background-position: 0 calc(var(--row-h) * 0.5);
+  border-radius: var(--radius-paper);
+  box-shadow: var(--shadow-paper);
+}
+
+/* Thin red margin line */
+.notebook::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--margin-x) - 14px);
+  width: 1.5px;
+  background: var(--margin);
+}
+
+.lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 0.75rem;
+  min-height: var(--row-h);
+}
+
+/* Line number sits in the margin, like a teacher's tally */
+.row-number {
+  position: absolute;
+  left: calc(-1 * var(--margin-x) + 10px);
+  bottom: 9px;
+  width: 30px;
+  text-align: right;
+  font: 500 0.8125rem / 1 var(--font-ui);
+  color: var(--pencil);
+}
+
+.row-input {
+  width: 100%;
+  height: calc(var(--row-h) - 6px);
+  padding: 0 0.25rem;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink);
+  font: 400 var(--text-line) / 1 var(--font-math);
+  transition: background-color var(--duration-fast), opacity var(--duration-fast);
+}
+
+.row-input:hover {
+  background: rgba(201, 216, 234, 0.25);
+}
+
+.row-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 -2px 0 var(--ink);
+}
+
+.row-question .row-input {
+  font-style: italic;
+}
+
+.row-tag {
+  font: 600 0.6875rem / 1 var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding-bottom: 14px;
+}
+
+/* "?" — not sure I read this right */
+.read-doubt {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 6px;
+  white-space: nowrap;
+}
+
+.read-doubt-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--amber);
+  border-radius: 50%;
+  color: var(--amber);
+  font: 700 1.25rem / 1 var(--font-hand);
+}
+
+.read-doubt-text {
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  color: var(--amber);
+}
+
+.confirm-button {
+  min-height: 30px;
+  padding: 0 0.8rem;
+  border: 1.5px solid var(--amber);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink);
+  font: 600 0.75rem / 1 var(--font-ui);
+  cursor: pointer;
+  transition: background-color var(--duration-fast);
+}
+
+.confirm-button:hover {
+  background: rgba(183, 121, 31, 0.12);
+}
+
+.confirm-button:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.read-ok {
+  font: 1.15rem / 1 var(--font-hand);
+  color: var(--ink-soft);
+  padding-bottom: 12px;
+}
+
+/* Check button directly below the last line */
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: calc(var(--row-h) * 0.5);
+}
+
+.actions[hidden] {
+  display: none;
+}
+
+.gate-note {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.25rem;
+  color: var(--amber);
+}
+
+/* The teacher's voice */
+.teacher-note {
+  margin: 0 0 calc(var(--row-h) * 0.5);
+  font-family: var(--font-hand);
+  font-size: 1.6rem;
+  line-height: 1.2;
+  color: var(--red);
+}
+
+@media (max-width: 520px) {
+  :root {
+    --margin-x: 44px;
+    --text-line: 1.125rem;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .read-doubt,
+  .row-tag,
+  .read-ok {
+    padding: 0 0 8px 0.25rem;
+  }
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Correct Me</title>
+    <meta name="description" content="Upload your handwritten math working. Correct Me finds where it went wrong, without solving it for you." />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23f8f3e6'/%3E%3Cpath d='M8 9l16 14M24 9L8 23' stroke='%23c3202c' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&display=swap"
+    />
+    <link rel="stylesheet" href="styles/tokens.css" />
+    <link rel="stylesheet" href="styles/layout.css" />
+    <link rel="stylesheet" href="styles/notebook.css" />
+    <script type="module" src="js/app.js"></script>
+  </head>
+  <body>
+    <header class="masthead">
+      <h1 class="brand">Correct <span class="brand-mark">Me</span></h1>
+      <p class="promise">
+        Upload your handwritten working. I'll check your solution, and if it's wrong, I'll find where it went wrong,
+        but I won't solve it for you.
+      </p>
+    </header>
+
+    <main>
+      <section id="start" class="start" aria-label="Upload your working">
+        <label class="dropzone" for="photo-input">
+          <span class="dropzone-title">Choose a photo of your working</span>
+          <span class="dropzone-sub">One page, JPEG or PNG. Put the question on the first line.</span>
+          <span class="button button-quiet">Choose photo</span>
+        </label>
+        <input id="photo-input" class="visually-hidden" type="file" accept="image/*" />
+      </section>
+
+      <section id="work" class="work" aria-label="Your working" hidden>
+        <figure class="photo-frame">
+          <div class="photo-stack">
+            <img id="photo" alt="Your uploaded working" />
+            <div class="sweep" aria-hidden="true"><span class="sweep-line"></span></div>
+          </div>
+          <figcaption id="photo-status" class="photo-status" aria-live="polite"></figcaption>
+          <button id="replace-photo" class="link-button" type="button">Upload a different photo</button>
+        </figure>
+
+        <section class="notebook" aria-labelledby="notebook-heading">
+          <h2 id="notebook-heading" class="visually-hidden">The lines I read</h2>
+          <p id="notebook-note" class="teacher-note" hidden></p>
+          <ol id="lines" class="lines"></ol>
+          <div id="actions" class="actions" hidden>
+            <button id="check" class="button button-pen" type="button" disabled>Check</button>
+            <p id="check-gate" class="gate-note"></p>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

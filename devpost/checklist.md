@@ -29,7 +29,7 @@ Build mode: fast — learner wants a careful look at raw AI output at the slice-
   Learner check: Read the raw verdicts next to the final result for all three runs. Is line 5 the cross, is the hint useful without giving the answer away, and does line 6 get flagged after the fix? Try one deliberately ambiguous line and see whether "unsure" ever appears.
   Commit: `feat: check lines with first-wrong rules and leak guard`
 
-- [ ] **3. Upload a photo in the browser and see what the app read, beside it**
+- [x] **3. Upload a photo in the browser and see what the app read, beside it**
   Becomes usable: `npm start`, open http://localhost:3000: the Correct Me header and promise, a large upload box, your photo shown immediately with the red-pen sweep and "Reading your problem...", then two columns — photo left, numbered editable lines on cream ruled paper right, line 1 labeled Question, unsure reads marked "?" — and the red **Check** button below the last line.
   Why now: With reading and checking proven, the first visible slice puts the real reader behind the real page and sets the notebook look everything else is drawn on.
   PRD ref: `prd.md > The Core Journey` (steps 1–5), `prd.md > Screens and Layout`, `prd.md > Look and Feel`, `prd.md > Upload`, `prd.md > Reading the Handwriting`

@@ -1,0 +1,40 @@
+/* Design tokens: a calm exercise book, with the teacher's red pen as the only loud colour. */
+:root {
+  --paper: #f8f3e6;
+  --paper-deep: #f1ead7;
+  --desk: #ece6d8;
+  --rule: #c9d8ea;
+  --margin: #e3a5a5;
+
+  --ink: #1f2a3a;
+  --ink-soft: #5b6472;
+  --green: #237a4b;
+  --red: #c3202c;
+  --red-deep: #9e1520;
+  --amber: #b7791f;
+  --pencil: #a2a7ae;
+
+  --font-math: 'STIX Two Text', 'Cambria Math', 'Times New Roman', serif;
+  --font-hand: 'Caveat', 'Bradley Hand', 'Segoe Print', cursive;
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --text-ui: 0.9375rem;
+  --text-line: 1.3125rem;
+  --text-hand: 1.5rem;
+  --text-brand: clamp(2.25rem, 1.6rem + 2.4vw, 3.5rem);
+
+  --row-h: 46px;
+  --margin-x: 64px;
+  --gutter: clamp(16px, 4vw, 48px);
+  --space-section: clamp(1.5rem, 1rem + 2.5vw, 3rem);
+
+  --radius-paper: 3px;
+  --radius-control: 999px;
+  --shadow-paper: 0 1px 0 rgba(31, 42, 58, 0.04), 0 12px 32px -18px rgba(31, 42, 58, 0.25);
+
+  --duration-fast: 150ms;
+  --duration-sweep: 1.8s;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --faded: 0.38;
+}
