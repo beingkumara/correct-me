@@ -16,13 +16,39 @@ export const GENERIC = {
   unsure: { note: 'Not sure this follows. Worth checking yourself.', hint: null },
 };
 
-/** Lowercase, drop whitespace and multiplication signs, unify minus signs, drop a trailing + C. */
+const LATEX_SYMBOLS = { int: '∫', pi: 'π', theta: 'θ', infty: '∞', sqrt: '√' };
+
+/**
+ * Backup safety net: turn common LaTeX into the plain Unicode the student sees,
+ * in case the model writes its private fields (or a hint) in LaTeX despite the prompt.
+ */
+export function delatex(text) {
+  let out = text.replace(/\$/g, '').replace(/\\(left|right)\b/g, '');
+  // \frac{a}{b} → (a)/(b); repeat for simple nesting
+  for (let i = 0; i < 3; i += 1) out = out.replace(/\\[dt]?frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)');
+  return out
+    .replace(/\\sqrt\{([^{}]*)\}/g, '√($1)')
+    .replace(/\\(mathrm|operatorname|text)\{([^{}]*)\}/g, '$2')
+    .replace(/\\(cdot|times|ast)\b/g, '·')
+    .replace(/\\[,;:! ]|\\quad\b|\\qquad\b/g, ' ')
+    .replace(/\\([a-zA-Z]+)/g, (_, name) => LATEX_SYMBOLS[name] ?? name)
+    .replace(/\^\{([^{}]*)\}/g, '^$1')
+    .replace(/[{}]/g, '');
+}
+
+/**
+ * Lowercase, drop whitespace, multiplication signs and brackets, unify minus signs and powers,
+ * drop a trailing + C. Applied to both the fragments and the note/hint text.
+ */
 export function normalize(text) {
-  return text
+  return delatex(text)
     .toLowerCase()
     .replace(/\s+/g, '')
     .replace(/[·×∙⋅*]/g, '')
+    .replace(/[()[\]]/g, '')
     .replace(/[−–—‐]/g, '-')
+    .replace(/²/g, '^2')
+    .replace(/³/g, '^3')
     .replace(/\+(c|constant)$/, '');
 }
 

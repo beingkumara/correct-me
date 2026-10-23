@@ -61,11 +61,19 @@ function resultMessage(result) {
   return `No mistakes found, but I wasn't sure about line ${result.lines.join(', ')}. Check that one yourself.`;
 }
 
-async function runCheck(lines) {
+async function runCheck(lines, doubtfulLines = []) {
   section(`CHECK (${process.env.CHECKER_MODEL})`);
-  const { display, raw, guardEvents } = await checkLines(lines);
+  const { display, raw, guardEvents, calibrations } = await checkLines(lines, { doubtfulLines });
   console.log('--- raw reply (includes PRIVATE correctedLine / finalAnswer) ---');
   console.log(JSON.stringify(JSON.parse(raw), null, 2));
+
+  console.log('\n--- calibration (code rules) ---');
+  if (doubtfulLines.length > 0) console.log(`doubtful lines (read with "?"): ${doubtfulLines.join(', ')}`);
+  console.log(
+    calibrations.length === 0
+      ? 'no verdicts changed'
+      : calibrations.map((c) => `line ${c.line} → unsure (${c.reason}, confidence ${c.confidence})`).join('\n'),
+  );
 
   console.log('\n--- leak guard ---');
   console.log(guardEvents.length === 0 ? 'no hits, nothing skipped' : `${guardEvents.length} event(s), see above and logs/leak-guard.jsonl`);
@@ -104,7 +112,10 @@ async function main() {
   }
 
   const read = await runRead(args[0]);
-  if (read) await runCheck(read.map((l) => l.text));
+  // As if the student confirmed every "?" line without editing it.
+  if (!read) return;
+  const doubtful = read.flatMap((l, i) => (l.confident ? [] : [i + 1]));
+  await runCheck(read.map((l) => l.text), doubtful);
 }
 
 main().catch((err) => {

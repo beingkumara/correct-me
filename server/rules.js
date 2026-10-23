@@ -1,6 +1,32 @@
 // Verdict rules, in plain code: the model judges, this enforces.
 // Stops at the first wrong line, carries on past unsure lines, and picks the result message.
 
+/** Verdicts the checker is less sure about than this become "unsure", whatever their status. */
+export const MIN_CONFIDENCE = 0.75;
+
+export const MISREAD_NOTE = 'I might have misread this line. Check it against your photo.';
+export const lowConfidenceNote = (line) => `Not sure this follows from line ${line - 1}. Worth checking yourself.`;
+
+/**
+ * Turn the model's raw verdicts into ones the student can trust, before applyRules.
+ * - A "wrong" verdict on a doubtful line (read with "?" and confirmed, not edited) blames the
+ *   reader, not the student: it becomes "unsure" with MISREAD_NOTE.
+ * - Any verdict below MIN_CONFIDENCE becomes "unsure", keeping the model's hint question.
+ * @param verdicts validated verdicts with `confidence`
+ * @param {{ doubtfulLines?: number[], minConfidence?: number }} options
+ */
+export function calibrate(verdicts, { doubtfulLines = [], minConfidence = MIN_CONFIDENCE } = {}) {
+  return verdicts.map((v) => {
+    if (v.status === 'wrong' && doubtfulLines.includes(v.line)) {
+      return { ...v, status: 'unsure', note: MISREAD_NOTE, hint: null, calibrated: 'misread' };
+    }
+    if (v.status !== 'unsure' && v.confidence < minConfidence) {
+      return { ...v, status: 'unsure', note: lowConfidenceNote(v.line), calibrated: 'low_confidence' };
+    }
+    return v;
+  });
+}
+
 /**
  * @param {{ line: number, status: 'ok'|'wrong'|'unsure', note: string|null, hint: string|null }[]} verdicts lines 2…N
  * @param {number} lineCount N, including the question on line 1

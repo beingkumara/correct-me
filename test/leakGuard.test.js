@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { guard, normalize, fragmentsFrom, GENERIC } from '../server/leakGuard.js';
+import { guard, normalize, delatex, fragmentsFrom, GENERIC } from '../server/leakGuard.js';
 
 const refs = { correctedLine: '∫ sin x dx = −cos x', finalAnswer: 'I = x·sin x + cos x + C' };
 const wrongLine = (note, hint) => ({ line: 5, status: 'wrong', note, hint });
@@ -53,4 +53,28 @@ test('skips fragments shorter than 3 characters and reports them', () => {
 test('ok lines are never touched, and missing refs are fine', () => {
   const v = { line: 2, status: 'ok', note: null, hint: null };
   assert.deepEqual(guard([v], { correctedLine: null, finalAnswer: null }).verdicts, [v]);
+});
+
+test('delatex turns common LaTeX into plain Unicode', () => {
+  assert.equal(delatex('$\\int \\sin x\\,dx = -\\cos x$'), '∫ sin x dx = -cos x');
+  assert.equal(delatex('\\frac{d}{dx}\\left(x^{2}\\right)'), '(d)/(dx)(x^2)');
+  assert.equal(delatex('x \\cdot \\sin(x) + \\cos(x) + C'), 'x · sin(x) + cos(x) + C');
+});
+
+test('normalize makes LaTeX, Unicode, and plain powers and brackets compare equal', () => {
+  assert.equal(normalize('$x\\sin(x) + \\cos(x) + C$'), normalize('x·sin x + cos x'));
+  assert.equal(normalize('x^{2}'), normalize('x²'));
+});
+
+test('catches a plain-text hint leaking a LaTeX corrected line', () => {
+  const latexRefs = { correctedLine: '\\int \\sin(x)\\,dx = -\\cos(x)', finalAnswer: null };
+  const out = guard([wrongLine('Sign error.', 'Should this be −cos x?')], latexRefs);
+  assert.equal(out.hits[0].fragmentType, 'correctedLine_rhs');
+  assert.deepEqual(out.verdicts[0], { line: 5, status: 'wrong', ...GENERIC.wrong });
+});
+
+test('catches a plain-text note leaking a LaTeX final answer', () => {
+  const latexRefs = { correctedLine: null, finalAnswer: '$I = x\\sin x + \\cos x + C$' };
+  const out = guard([wrongLine('You should end with x sin x + cos x.', null)], latexRefs);
+  assert.equal(out.hits[0].fragmentType, 'finalAnswer_rhs');
 });

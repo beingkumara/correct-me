@@ -42,7 +42,7 @@ test('rejects non-object replies', () => {
   assert.equal(validateRead('ok').ok, false);
 });
 
-const verdict = (line, status = 'ok', note = null, hint = null) => ({ line, status, note, hint });
+const verdict = (line, status = 'ok', note = null, hint = null, confidence = 0.95) => ({ line, status, confidence, note, hint });
 
 test('accepts one verdict per line 2…N and clears notes on ok lines', () => {
   const result = validateCheck(
@@ -68,4 +68,11 @@ test('rejects unknown statuses and wrong/unsure lines without a note', () => {
   assert.equal(validateCheck({ verdicts: [verdict(2, 'maybe')] }, 2).ok, false);
   assert.equal(validateCheck({ verdicts: [verdict(2, 'wrong', '  ')] }, 2).ok, false);
   assert.equal(validateCheck({ verdicts: [verdict(2, 'unsure')] }, 2).ok, false);
+});
+
+test('rejects missing or out-of-range confidence', () => {
+  for (const confidence of [undefined, -0.1, 1.5, '0.9']) {
+    const v = { line: 2, status: 'ok', confidence, note: null, hint: null };
+    assert.equal(validateCheck({ verdicts: [v] }, 2).ok, false, String(confidence));
+  }
 });

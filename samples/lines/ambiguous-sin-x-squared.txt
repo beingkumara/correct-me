@@ -1,0 +1,2 @@
+y = sin x²,  find dy/dx
+dy/dx = 2 sin x cos x

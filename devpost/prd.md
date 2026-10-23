@@ -57,6 +57,7 @@ Develops `scope.md > The Core Loop` step 2.
 - [ ] Each handwritten line becomes one numbered, editable row in the right column, in clean printed math.
 - [ ] Line 1 is labeled as **the question** and is never ticked or crossed.
 - [ ] A line the app couldn't read confidently shows a small "?" with "not sure I read this right".
+- [ ] **Check** stays disabled until the student has edited or confirmed every "?" line. *(Added at the build checkpoint: a misread should never be blamed on the student.)*
 - [ ] The app never invents lines that aren't on the page.
 - [ ] If the photo doesn't start with the question, the student can type the question into line 1.
 
@@ -74,6 +75,8 @@ Develops `scope.md > The Unique Kernel`.
 The learner's principle: *a confident wrong verdict is worse than an honest "I'm not sure", because students would trust it.*
 - [ ] A line the app can't confidently judge gets an amber or pencil-grey circled "?" (not red, not a cross) and a handwritten note like "Not sure this follows from line X. Worth checking yourself." It may include a hint question but never an answer. It should feel like a teacher's "hmm?", not a point against the student.
 - [ ] Checking **continues** past an unsure line, treating it as correct.
+- [ ] If the student confirmed a "?" line without editing it and the checker still calls it wrong, it shows as unsure with "I might have misread this line." The student is never crossed for the app's misread. *(Build checkpoint.)*
+- [ ] The checker gives a confidence for every line, and the code, not the prompt, turns low-confidence verdicts into unsure. *(Build checkpoint: asking for "unsure" alone never produced one.)*
 - [ ] If a later line gets a red cross, its note adds that this verdict assumes line X was right, which the app wasn't sure about.
 - [ ] If the check reaches the end with no cross but one or more unsure lines, the result is **"No mistakes found, but I wasn't sure about line X. Check that one yourself."**, not a clean "No mistakes found."
 - [ ] A clean "No mistakes found." appears only when every line is a confident tick.

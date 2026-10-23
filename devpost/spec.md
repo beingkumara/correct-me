@@ -23,10 +23,11 @@ PRD ref: `prd.md > The Core Journey`.
 2. **Read.** The page calls `POST /api/read` with `{ image: "data:image/jpeg;base64,..." }`. The server sends it to the reader model with the read prompt and a strict JSON schema, validates the reply, and returns `{ status, lines: [{ text, confident }] }`.
    - `status: "unreadable"` or `"not_math"` → the page shows the honest red note and the upload-another button, with no lines.
    - Invalid or failed → the page shows "Try again", and the photo stays.
-3. **Confirm.** The page renders line 1 as **the question** and the rest as editable rows. Lines with `confident: false` show "?" and "not sure I read this right". The student edits, and the edits live only in the page's memory.
-4. **Check.** The page calls `POST /api/check` with `{ lines: ["I = ∫ x·cos x dx", "u = x, dv = cos x dx", ...] }`, which is the current text with line 1 as the question.
-5. **Judge.** The server sends the lines to the checker model and gets back per-line verdicts plus the **private** `correctedLine` and `finalAnswer` fields.
+3. **Confirm.** The page renders line 1 as **the question** and the rest as editable rows. Lines with `confident: false` show "?" and "not sure I read this right", plus a small **Confirm** control. **Check** stays disabled until every "?" line is edited or confirmed. The student edits, and the edits live only in the page's memory.
+4. **Check.** The page calls `POST /api/check` with `{ lines: ["I = ∫ x·cos x dx", "u = x, dv = cos x dx", ...], doubtfulLines: [2] }`: the current text with line 1 as the question, plus the "?" lines the student confirmed without editing.
+5. **Judge.** The server sends the lines to the checker model and gets back per-line verdicts, each with a `confidence`, plus the **private** `correctedLine` and `finalAnswer` fields.
 6. **Validate.** The reply must have exactly one verdict for each of lines 2…N, in order, each with a valid status. Otherwise it's a failure, which shows "Try again" and is never a verdict.
+6b. **Calibrate.** `calibrate()` in `rules.js`: a `wrong` on a doubtful line becomes `unsure` ("I might have misread this line."); any verdict with confidence below 0.75 becomes `unsure`.
 7. **Guard.** For each note and hint on a `wrong` or `unsure` line, the leak guard looks for the corrected line, its right-hand side, the final answer, or the answer's right-hand side (each with and without "+ C"), after normalizing. On a hit, it replaces the text with a generic note and hint and logs exactly what it caught.
 8. **Apply rules.** `rules.js` turns the verdicts into what's displayed: ticks, the first cross, "not checked", unsure marks, assumption notes, and the result message.
 9. **Strip.** `correctedLine` and `finalAnswer` are deleted. The browser receives only what it shows.
@@ -83,7 +84,7 @@ The header (name and promise), the start state with the upload box, and the work
 PRD ref: `prd.md > Screens and Layout`, `prd.md > Look and Feel`.
 
 ### Session State — `public/js/state.js`
-Holds the in-memory session and nothing else: `{ phase, photoUrl, lines, verdict, editedFrom }`. It exposes pure update functions that return a new state (`withLines`, `withEdit`, `withVerdict`, `withFailure`). Nothing is persisted, so closing the tab ends the session.
+Holds the in-memory session and nothing else: `{ phase, photoUrl, lines, verdict, editedFrom }` (each line also tracks `confirmed`). It exposes pure update functions that return a new state (`withLines`, `withEdit`, `withVerdict`, `withFailure`). Nothing is persisted, so closing the tab ends the session.
 PRD ref: `prd.md > States and Boundaries` (persistence, no lost work).
 
 ### Image Shrinker — `public/js/image.js`
@@ -95,7 +96,7 @@ PRD ref: `prd.md > Upload`.
 PRD ref: `prd.md > States and Boundaries` (something failed).
 
 ### Lines Editor and Marks — `public/js/render.js`
-Draws the numbered rows on ruled lines: line 1 labeled **Question**, the editable inputs, the "?" for unconfident reads, ticks and crosses, the amber circled "?", margin notes and hints in Caveat, "not checked", "edited", "needs re-check", the result message, and the **Check** / **Check again** button directly below the last line. All dynamic text goes in through `textContent`, never `innerHTML`.
+Draws the numbered rows on ruled lines: line 1 labeled **Question**, the editable inputs, the "?" and **Confirm** control for unconfident reads (Check disabled until each is edited or confirmed), ticks and crosses, the amber circled "?", margin notes and hints in Caveat, "not checked", "edited", "needs re-check", the result message, and the **Check** / **Check again** button directly below the last line. All dynamic text goes in through `textContent`, never `innerHTML`.
 PRD ref: `prd.md > Reading the Handwriting`, `prd.md > Checking a Solution`, `prd.md > Unsure Verdicts`, `prd.md > Editing and Re-checking`.
 
 ### Page Controller — `public/js/app.js`
@@ -103,7 +104,7 @@ Wires the events together: upload → shrink → read → render; input on line 
 PRD ref: `prd.md > The Core Journey`, `prd.md > Starting Over`.
 
 ### Server and Routes — `server/index.js`
-Express 5 app: `express.static('public')`, `express.json({ limit: '8mb' })`, `POST /api/read`, `POST /api/check`. It validates input at the boundary (the image must be a `data:image/` URL; `lines` must be an array of 2–40 strings, each ≤ 300 characters) and responds with a single envelope shape: `{ ok: true, data }` or `{ ok: false, error: { kind, message } }`. Error kinds are `invalid_input`, `ai_failed`, `bad_ai_reply`, and `rate_limited`. Detailed errors are logged on the server, and the browser gets a friendly message.
+Express 5 app: `express.static('public')`, `express.json({ limit: '8mb' })`, `POST /api/read`, `POST /api/check`. It validates input at the boundary (the image must be a `data:image/` URL; `lines` must be an array of 2–40 strings, each ≤ 300 characters; `doubtfulLines` an optional array of line numbers) and responds with a single envelope shape: `{ ok: true, data }` or `{ ok: false, error: { kind, message } }`. Error kinds are `invalid_input`, `ai_failed`, `bad_ai_reply`, and `rate_limited`. Detailed errors are logged on the server, and the browser gets a friendly message.
 
 ### Model Gateway — `server/llm.js`
 **The one small module that talks to AI providers.** `chatJSON({ role: 'reader' | 'checker', messages, schema })` reads `READER_*` or `CHECKER_*` settings from the environment and POSTs to `${BASE_URL}/chat/completions` (OpenAI-compatible) with `response_format: { type: 'json_schema', json_schema: { name, strict: true, schema } }` (or plain `{ type: 'json_object' }` when `<ROLE>_JSON_MODE=json_object`, which the Qwen reader needs) and a 40-second `AbortController` timeout. It parses `choices[0].message.content` as JSON and throws a typed error if anything fails. Because Groq and Gemini both offer OpenAI-compatible endpoints, switching between them is an `.env` change. Claude would need a small adapter in this same file, which is not built now.
@@ -111,17 +112,18 @@ Implements the learner's requirement: "The model call should sit behind one smal
 
 ### Prompts — `server/prompts.js`
 - **Read prompt:** transcribe each handwritten line exactly as written, *including mistakes*; never fix, complete, or invent lines; use plain Unicode math; mark `confident: false` for any line you're not sure you read correctly; report `unreadable` or `not_math` instead of guessing.
-- **Check prompt:** line 1 is the question. For each line 2…N, judge only whether it **follows correctly from the question and the lines before it, as written**. Don't judge it against your own solution path, and accept valid alternative methods. Use `unsure` whenever you are not confident, because a confident wrong verdict is worse than "unsure". For `wrong` lines, name the kind of mistake briefly and ask one hint question. Never state the corrected line, the right value, or the final answer in `note` or `hint`. Separately, fill `correctedLine` (for the first wrong line) and `finalAnswer`, which are private and used only for checking.
+- **Check prompt:** line 1 is the question. For each line 2…N, judge only whether it **follows correctly from the question and the lines before it, as written**. Don't judge it against your own solution path, and accept valid alternative methods. Use `unsure` whenever you are not confident, because a confident wrong verdict is worse than "unsure". For `wrong` lines, name the kind of mistake briefly and ask one hint question. Never state the corrected line, the right value, or the final answer in `note` or `hint`. Give a calibrated `confidence` (0–1) for every line. Write everything, including the private fields, in plain Unicode math, never LaTeX. Separately, fill `correctedLine` (for the first wrong line) and `finalAnswer`, which are private and used only for checking.
 - The rules about stopping, greying, and messages are **not** in the prompt. They live in `rules.js`.
 
 ### Reply Validator — `server/validate.js`
 Checks the parsed replies against what the rules need, beyond the schema:
 - **Read:** `status` is one of `ok | unreadable | not_math`. If `ok`: 1–40 lines, each `text` a non-empty string.
-- **Check:** exactly **N−1** verdicts with `line` values 2…N in order. Each `status` is one of `ok | wrong | unsure`. Every `wrong` or `unsure` has a non-empty `note`.
+- **Check:** exactly **N−1** verdicts with `line` values 2…N in order. Each `status` is one of `ok | wrong | unsure`. Every `wrong` or `unsure` has a non-empty `note`. Every verdict has a numeric `confidence` from 0 to 1.
 - Any violation → `bad_ai_reply` → "Try again". **Never a partial verdict.**
 
 ### Verdict Rules — `server/rules.js`
-A pure function, `applyRules(verdicts, lineCount)`, that returns `{ lines: [{ line, mark, note, hint, assumes }], result }`:
+First, pure `calibrate(verdicts, { doubtfulLines })` (build checkpoint): a `wrong` on a doubtful line → `unsure` with "I might have misread this line. Check it against your photo."; any `ok`/`wrong` below `MIN_CONFIDENCE` (0.75) → `unsure` with "Not sure this follows from line X. Worth checking yourself." and the model's hint kept.
+Then a pure function, `applyRules(verdicts, lineCount)`, that returns `{ lines: [{ line, mark, note, hint, assumes }], result }`:
 - `mark` is one of `question | tick | cross | unsure | not_checked`.
 - It walks lines 2…N. `ok` gives a tick. `unsure` gives an unsure mark, records the line, and continues. The first `wrong` gives a cross and stops; every later line is `not_checked`.
 - If a cross comes after one or more unsure lines, `assumes: [those lines]` is added, and the page writes "This assumes line X was right, which I wasn't sure about."
@@ -131,7 +133,7 @@ PRD ref: `prd.md > Checking a Solution`, `prd.md > Unsure Verdicts`.
 ### Leak Guard — `server/leakGuard.js`
 A pure `guard(lines, privateRefs)` that returns `{ lines, hits }`, plus a logger.
 - **Fragments to look for:** `correctedLine`; its **right-hand side** (the text after the last `=`); `finalAnswer`; its right-hand side. Each comes both as written and with a trailing `+ C` / `+ c` / `+ constant` removed.
-- **Normalize** both the fragments and the note and hint text: lowercase; remove all whitespace; **remove** `·` `×` `∙` `⋅` `*` (so `x·sin x`, `x*sin x`, and implicit `x sin x` all match; found by testing the rule while drafting); map `−` `–` `—` `‐` `-` → `-`; remove a trailing `+c`.
+- **Normalize** both the fragments and the note and hint text: first `delatex()` (build checkpoint: the model sometimes wrote its private fields in LaTeX) turns `$`, `\frac{a}{b}`, `\int`, `\sin`, `\cdot`, `\,`, `^{2}` and similar into plain Unicode; then lowercase; remove brackets `()[]`; map `²`/`³` → `^2`/`^3`; remove all whitespace; **remove** `·` `×` `∙` `⋅` `*` (so `x·sin x`, `x*sin x`, and implicit `x sin x` all match; found by testing the rule while drafting); map `−` `–` `—` `‐` `-` → `-`; remove a trailing `+c`.
 - **Hit** = a normalized fragment appears as a substring of the normalized note or hint. Fragments **shorter than 3 characters** after normalizing are skipped (to avoid false alarms on `x` or `1`) and logged as `skipped_short`.
 - **On a hit:** the note becomes "There's a mistake on this line." and the hint becomes "Compare this line with the one before it. What changed, and is that step allowed?" (for unsure lines: "Not sure this follows. Worth checking yourself.").
 - **Log** every hit and skip as one JSON line appended to `logs/leak-guard.jsonl` and echoed with `console.warn`: `{ time, line, field, fragmentType, fragment, original }`. This lets you count how often the model tries to leak.
@@ -163,8 +165,8 @@ Implements the learner's requirements: hint and note are checked in code, catchi
 ```json
 {
   "verdicts": [
-    { "line": 2, "status": "ok", "note": null, "hint": null },
-    { "line": 5, "status": "wrong", "note": "Sign error while integrating.", "hint": "What do you get when you differentiate cos x?" }
+    { "line": 2, "status": "ok", "confidence": 0.97, "note": null, "hint": null },
+    { "line": 5, "status": "wrong", "confidence": 0.95, "note": "Sign error while integrating.", "hint": "What do you get when you differentiate cos x?" }
   ],
   "correctedLine": "∫ sin x dx = −cos x",
   "finalAnswer": "I = x·sin x + cos x + C"

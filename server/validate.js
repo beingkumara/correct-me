@@ -43,6 +43,9 @@ export function validateCheck(reply, lineCount) {
     if (!v || v.line !== expectedLine) return fail(`verdict ${i + 1} is for line ${v?.line}, expected ${expectedLine}`);
     if (!CHECK_STATUSES.includes(v.status)) return fail(`line ${expectedLine} has unknown status ${v.status}`);
     if (v.status !== 'ok' && !optionalText(v.note)) return fail(`line ${expectedLine} is ${v.status} with no note`);
+    if (typeof v.confidence !== 'number' || v.confidence < 0 || v.confidence > 1) {
+      return fail(`line ${expectedLine} has confidence ${v.confidence}, expected 0–1`);
+    }
   }
 
   return {
@@ -51,6 +54,7 @@ export function validateCheck(reply, lineCount) {
       verdicts: verdicts.map((v) => ({
         line: v.line,
         status: v.status,
+        confidence: v.confidence,
         note: v.status === 'ok' ? null : optionalText(v.note),
         hint: v.status === 'ok' ? null : optionalText(v.hint),
       })),
