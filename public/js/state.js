@@ -58,6 +58,9 @@ export const withVerdict = (state, verdict) => ({
 
 export const withFailure = (state, failure) => ({ ...state, phase: 'failed', failure });
 
+/** Try again: back to the busy phase of whichever request failed, with photo and edits untouched. */
+export const withRetry = (state) => ({ ...state, phase: state.failure?.retry === 'check' ? 'checking' : 'reading', failure: null });
+
 /** Lines read with "?" that the student has neither edited nor confirmed. */
 export const linesNeedingReview = (state) =>
   state.lines.flatMap((l, i) => (!l.confident && !l.edited && !l.confirmed ? [i + 1] : []));

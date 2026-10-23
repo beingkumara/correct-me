@@ -59,7 +59,7 @@ Build mode: fast — learner wants a careful look at raw AI output at the slice-
   Learner check: Do the whole demo yourself: fix line 5, Check again, see line 6 flagged, fix it, and get "No mistakes found."
   Commit: `feat: edit lines and check again with re-check marks`
 
-- [ ] **6. Honest messages when things go wrong, and starting over**
+- [x] **6. Honest messages when things go wrong, and starting over**
   Becomes usable: A HEIC or other unopenable file gets "I can't open this file type..."; a blurry or blank photo gets the can't-read note; a non-math photo gets the not-math note — each with an upload-another button. Network, AI, malformed-reply, and rate-limit failures show a message and **Try again** without losing the photo or edits. "Upload a different photo" resets. The layout stacks below 900 px.
   Why now: The happy path is complete; these states protect the student's work and the app's honesty, and the spec lists them as required.
   PRD ref: `prd.md > States and Boundaries`, `prd.md > Starting Over`, `prd.md > Screens and Layout` (narrow screens)
@@ -100,3 +100,4 @@ Activity mode: [live app and editor, explicit static fallback, focused alternati
 - Demo photo replaced by the learner's 6-line version (sign error on line 5); `samples/sample_question.jpeg` now matches the planned demo, and the reality check flags line 5 with no leak.
 - Known limitation, accepted by the learner: the leak guard catches copied answers, not reworded near-answers. With line 5 fixed, the checker once hinted "What is x·sin x − (−cos x) equal to?", one step from the answer but containing no answer string. The learner kept it (it still makes the student do the last step) rather than tighten the prompt and risk weaker hints everywhere near the deadline.
 - Reader left as is for the squashed `u = x  dv = cos x dx` gap on lines 2–3 of the demo photo: the learner will fix it in the edit box during the demo, which shows the confirm-what-it-read step on a real misread.
+- Network-failure verification used Playwright's `route.abort()` on `/api/check` instead of stopping the server mid-check — same failure the page sees, but deterministic; Groq's real 503 "over capacity" on the Qwen preview model also appeared during the blank-page run and showed Try again as designed.

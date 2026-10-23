@@ -175,13 +175,20 @@
     --text-line: 1.125rem;
   }
 
-  .row {
-    grid-template-columns: minmax(0, 1fr);
+  .row-number {
+    left: calc(-1 * var(--margin-x) + 2px);
+    width: 22px;
   }
 
-  .read-doubt,
-  .row-tag,
-  .read-ok {
+  /* Marks stay beside their line; only the wide "not sure I read this" block wraps below */
+  .row-aside[data-kind='doubt'] {
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+  }
+
+  .read-doubt {
+    flex-wrap: wrap;
+    white-space: normal;
     padding: 0 0 8px 0.25rem;
   }
 }
@@ -322,4 +329,27 @@
 /* A mark that is already on the page shouldn't be "drawn" again when its line is edited */
 .row-aside[data-kind*='+edited'] .mark {
   animation: none;
+}
+
+/* Honest messages and failures: a red handwritten note with one clear way forward */
+.alert {
+  margin-top: calc(var(--row-h) * 0.25);
+}
+
+.alert[hidden] {
+  display: none;
+}
+
+.alert .teacher-note {
+  margin-bottom: 0.75rem;
+}
+
+.alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.alert-actions .button[hidden] {
+  display: none;
 }

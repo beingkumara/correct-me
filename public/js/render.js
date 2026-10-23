@@ -161,8 +161,10 @@ export function render(state, els) {
   els.photoStatus.textContent = STATUS_TEXT[state.phase] ?? '';
 
   const note = noteFor(state);
-  els.note.hidden = !note;
+  els.alert.hidden = !note;
   els.note.textContent = note ?? '';
+  els.retry.hidden = state.phase !== 'failed';
+  els.uploadAnother.hidden = state.phase !== 'message';
 
   renderLines(state, els, busy);
 
@@ -171,7 +173,8 @@ export function render(state, els) {
   els.result.textContent = resultMessage(result);
   els.result.dataset.kind = result?.kind ?? '';
 
-  els.actions.hidden = state.lines.length === 0;
+  // While a failure note offers Try again, a second red button would only compete with it.
+  els.actions.hidden = state.lines.length === 0 || state.phase === 'failed';
   const pending = linesNeedingReview(state);
   els.check.disabled = busy || !canCheck(state);
   els.check.textContent = state.verdict && state.editedFrom !== null ? 'Check again' : 'Check';

@@ -2,6 +2,7 @@
 
 import {
   initialState, withPhoto, withLines, withEdit, withConfirm, withMessage, withFailure, withChecking, withVerdict,
+  withRetry,
   canCheck, doubtfulLines,
 } from './state.js';
 import { shrinkPhoto, UnsupportedFileError } from './image.js';
@@ -17,7 +18,10 @@ const els = {
   photoStack: document.querySelector('.photo-stack'),
   photoStatus: $('photo-status'),
   replacePhoto: $('replace-photo'),
+  alert: $('notebook-alert'),
   note: $('notebook-note'),
+  retry: $('retry'),
+  uploadAnother: $('upload-another'),
   lines: $('lines'),
   actions: $('actions'),
   check: $('check'),
@@ -53,10 +57,10 @@ async function handleFile(file) {
   await readCurrentPhoto();
 }
 
-async function checkCurrentLines() {
+async function checkCurrentLines({ retrying = false } = {}) {
   if (!canCheck(state)) return;
   const photoUrl = state.photoUrl;
-  setState(withChecking(state));
+  if (!retrying) setState(withChecking(state));
   const res = await checkLines(state.lines.map((l) => l.text), doubtfulLines(state));
   if (state.photoUrl !== photoUrl) return;
   if (!res.ok) return setState(withFailure(state, { ...res.error, retry: 'check' }));
@@ -67,7 +71,14 @@ const rowIndex = (target) => Number(target.closest('.row')?.dataset.index);
 
 els.photoInput.addEventListener('change', () => handleFile(els.photoInput.files[0]));
 els.replacePhoto.addEventListener('click', () => els.photoInput.click());
-els.check.addEventListener('click', checkCurrentLines);
+els.check.addEventListener('click', () => checkCurrentLines());
+els.uploadAnother.addEventListener('click', () => els.photoInput.click());
+els.retry.addEventListener('click', () => {
+  const retry = state.failure?.retry;
+  setState(withRetry(state));
+  if (retry === 'check') checkCurrentLines({ retrying: true });
+  else readCurrentPhoto();
+});
 
 els.lines.addEventListener('input', (event) => {
   if (!event.target.classList.contains('row-input')) return;

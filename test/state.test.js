@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  initialState, withPhoto, withLines, withEdit, withConfirm, withChecking, withVerdict, canCheck, linesNeedingReview, doubtfulLines,
+  initialState, withPhoto, withLines, withEdit, withConfirm, withChecking, withVerdict, withFailure, withRetry, canCheck, linesNeedingReview, doubtfulLines,
 } from '../public/js/state.js';
 
 const read = [
@@ -68,4 +68,19 @@ test('after a verdict, editedFrom tracks the lowest edited line until the next v
 
 test('before any verdict, editing does not set editedFrom', () => {
   assert.equal(withEdit(withRead(), 2, 'changed').editedFrom, null);
+});
+
+test('Try again returns to the failed request\'s busy phase and keeps photo, lines, and verdict', () => {
+  const ready = withConfirm(withConfirm(withRead(), 1), 2);
+  const verdict = { lines: [], result: { kind: 'clear' } };
+  const failedCheck = withFailure(withChecking(withVerdict(ready, verdict)), { kind: 'ai_failed', message: 'x', retry: 'check' });
+  const retried = withRetry(failedCheck);
+  assert.equal(retried.phase, 'checking');
+  assert.equal(retried.failure, null);
+  assert.deepEqual(retried.lines, failedCheck.lines);
+  assert.equal(retried.verdict, verdict);
+  assert.equal(retried.photoUrl, ready.photoUrl);
+
+  const failedRead = withFailure(withPhoto(initialState(), 'data:image/jpeg;base64,z'), { kind: 'ai_failed', message: 'x', retry: 'read' });
+  assert.equal(withRetry(failedRead).phase, 'reading');
 });

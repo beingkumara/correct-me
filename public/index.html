@@ -51,9 +51,15 @@
 
         <section class="notebook" aria-labelledby="notebook-heading">
           <h2 id="notebook-heading" class="visually-hidden">The lines I read</h2>
-          <p id="notebook-note" class="teacher-note" hidden></p>
           <ol id="lines" class="lines"></ol>
           <p id="result" class="result-note" aria-live="polite" hidden></p>
+          <div id="notebook-alert" class="alert" role="alert" hidden>
+            <p id="notebook-note" class="teacher-note"></p>
+            <div class="alert-actions">
+              <button id="retry" class="button button-pen" type="button" hidden>Try again</button>
+              <button id="upload-another" class="button button-quiet" type="button" hidden>Upload another photo</button>
+            </div>
+          </div>
           <div id="actions" class="actions" hidden>
             <button id="check" class="button button-pen" type="button" disabled>Check</button>
             <p id="check-gate" class="gate-note"></p>
