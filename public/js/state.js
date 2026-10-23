@@ -35,13 +35,26 @@ export function withEdit(state, index, text) {
   const lineNumber = index + 1;
   return {
     ...state,
-    lines: replaceLine(state.lines, index, { text, edited: true }),
+    // An edited line is the student's own text now, so it is no longer an uncertain read.
+    lines: replaceLine(state.lines, index, { text, edited: true, confident: true }),
     editedFrom: state.verdict ? Math.min(state.editedFrom ?? lineNumber, lineNumber) : state.editedFrom,
   };
 }
 
 export const withConfirm = (state, index) =>
   state.lines[index] ? { ...state, lines: replaceLine(state.lines, index, { confirmed: true }) } : state;
+
+export const withChecking = (state) => ({ ...state, phase: 'checking', failure: null });
+
+/** A new verdict: "edited" marks and "needs re-check" reset, since every line was just judged. */
+export const withVerdict = (state, verdict) => ({
+  ...state,
+  phase: 'verdict',
+  verdict,
+  editedFrom: null,
+  failure: null,
+  lines: state.lines.map((l) => ({ ...l, edited: false })),
+});
 
 export const withFailure = (state, failure) => ({ ...state, phase: 'failed', failure });
 
@@ -50,7 +63,7 @@ export const linesNeedingReview = (state) =>
   state.lines.flatMap((l, i) => (!l.confident && !l.edited && !l.confirmed ? [i + 1] : []));
 
 /** "?" lines confirmed without editing: a cross on these blames the reader, not the student. */
-export const doubtfulLines = (state) => state.lines.flatMap((l, i) => (!l.confident && !l.edited ? [i + 1] : []));
+export const doubtfulLines = (state) => state.lines.flatMap((l, i) => (!l.confident ? [i + 1] : []));
 
 export const canCheck = (state) =>
   state.lines.length >= 2 &&

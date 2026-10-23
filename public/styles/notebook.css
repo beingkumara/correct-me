@@ -46,7 +46,7 @@
 .row-number {
   position: absolute;
   left: calc(-1 * var(--margin-x) + 10px);
-  bottom: 9px;
+  top: calc(var(--row-h) - 1.35rem);
   width: 30px;
   text-align: right;
   font: 500 0.8125rem / 1 var(--font-ui);
@@ -183,5 +183,118 @@
   .row-tag,
   .read-ok {
     padding: 0 0 8px 0.25rem;
+  }
+}
+
+/* Teacher's marks in the right margin */
+.mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  padding-bottom: 4px;
+  font: 700 2.1rem / 1 var(--font-hand);
+  animation: mark-in var(--duration-normal, 300ms) var(--ease-out-expo) both;
+}
+
+.mark-tick {
+  color: var(--green);
+}
+
+.mark-cross {
+  color: var(--red);
+  font-size: 2.4rem;
+}
+
+.mark-unsure {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  margin-bottom: 8px;
+  padding: 0;
+  border: 2px solid var(--amber);
+  border-radius: 50%;
+  color: var(--amber);
+  font-size: 1.4rem;
+}
+
+.mark-label {
+  font: 1.15rem / 1 var(--font-hand);
+  color: var(--pencil);
+  padding-bottom: 12px;
+}
+
+/* Lines after the red cross fade to pencil */
+.row.is-not-checked .row-input {
+  opacity: var(--faded);
+  color: var(--pencil);
+}
+
+/* Margin note and hint, in the teacher's hand, sitting on the ruled lines */
+.row-note {
+  grid-column: 1 / -1;
+}
+
+.row-note:empty {
+  display: none;
+}
+
+.row-note p {
+  margin: 0;
+  padding-left: 0.25rem;
+  font-family: var(--font-hand);
+  font-size: var(--text-hand);
+  line-height: var(--row-h);
+}
+
+.row-note-cross p {
+  color: var(--red);
+}
+
+.row-note-unsure p {
+  color: var(--amber);
+}
+
+.row-note .note-hint {
+  font-style: italic;
+}
+
+.row-note .note-hint::before {
+  content: '→ ';
+}
+
+.result-note {
+  margin: calc(var(--row-h) * 0.25) 0 0;
+  font-family: var(--font-hand);
+  font-size: 1.9rem;
+  line-height: var(--row-h);
+  color: var(--red);
+}
+
+.result-note[data-kind='clear'] {
+  color: var(--green);
+}
+
+.result-note[data-kind='clear_with_unsure'] {
+  color: var(--amber);
+}
+
+.result-note[hidden] {
+  display: none;
+}
+
+@keyframes mark-in {
+  from {
+    opacity: 0;
+    transform: scale(1.35) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark {
+    animation: none;
   }
 }

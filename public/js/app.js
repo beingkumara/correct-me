@@ -1,8 +1,11 @@
 // Page controller: wires events → state updates → render.
 
-import { initialState, withPhoto, withLines, withEdit, withConfirm, withMessage, withFailure } from './state.js';
+import {
+  initialState, withPhoto, withLines, withEdit, withConfirm, withMessage, withFailure, withChecking, withVerdict,
+  canCheck, doubtfulLines,
+} from './state.js';
 import { shrinkPhoto, UnsupportedFileError } from './image.js';
-import { readPhoto } from './api.js';
+import { readPhoto, checkLines } from './api.js';
 import { render } from './render.js';
 
 const $ = (id) => document.getElementById(id);
@@ -19,6 +22,7 @@ const els = {
   actions: $('actions'),
   check: $('check'),
   checkGate: $('check-gate'),
+  result: $('result'),
 };
 
 let state = initialState();
@@ -49,10 +53,21 @@ async function handleFile(file) {
   await readCurrentPhoto();
 }
 
+async function checkCurrentLines() {
+  if (!canCheck(state)) return;
+  const photoUrl = state.photoUrl;
+  setState(withChecking(state));
+  const res = await checkLines(state.lines.map((l) => l.text), doubtfulLines(state));
+  if (state.photoUrl !== photoUrl) return;
+  if (!res.ok) return setState(withFailure(state, { ...res.error, retry: 'check' }));
+  return setState(withVerdict(state, res.data));
+}
+
 const rowIndex = (target) => Number(target.closest('.row')?.dataset.index);
 
 els.photoInput.addEventListener('change', () => handleFile(els.photoInput.files[0]));
 els.replacePhoto.addEventListener('click', () => els.photoInput.click());
+els.check.addEventListener('click', checkCurrentLines);
 
 els.lines.addEventListener('input', (event) => {
   if (!event.target.classList.contains('row-input')) return;

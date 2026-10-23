@@ -33,6 +33,7 @@
   --shadow-paper: 0 1px 0 rgba(31, 42, 58, 0.04), 0 12px 32px -18px rgba(31, 42, 58, 0.25);
 
   --duration-fast: 150ms;
+  --duration-normal: 300ms;
   --duration-sweep: 1.8s;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 

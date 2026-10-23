@@ -39,7 +39,7 @@ Build mode: fast — learner wants a careful look at raw AI output at the slice-
   Learner check: Open http://localhost:3000, upload your photo, and watch it read. Do the lines match your handwriting, can you fix a line by typing, and does the page look like the calm exercise book you pictured?
   Commit: `feat: upload photo and confirm transcribed lines in the browser`
 
-- [ ] **4. Press Check and get the teacher's marks**
+- [x] **4. Press Check and get the teacher's marks**
   Becomes usable: Pressing **Check** shows "Checking your working...", then green ticks, one red cross with a handwritten Caveat note and hint, greyed "not checked" lines, amber circled "?" for unsure lines with the "assumes" note, and "No mistakes found." (or the caveated version).
   Why now: This puts the kernel from slice 2 on screen — the demo's "oh, that's cool" beat.
   PRD ref: `prd.md > Checking a Solution`, `prd.md > Unsure Verdicts`, `prd.md > The Core Journey` (step 6)

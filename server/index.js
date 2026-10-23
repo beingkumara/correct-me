@@ -4,9 +4,24 @@ import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { assertConfigured, chatJSON, LlmError } from './llm.js';
 import { READ_SCHEMA, readMessages } from './prompts.js';
-import { validateRead } from './validate.js';
+import { validateRead, MAX_LINES } from './validate.js';
+import { checkLines } from './check.js';
 
 const MAX_IMAGE_CHARS = 8 * 1024 * 1024;
+const MAX_LINE_CHARS = 300;
+
+/** lines: 2–40 non-empty strings ≤ 300 chars; doubtfulLines: optional line numbers within range. */
+export function parseCheckBody(body) {
+  const { lines, doubtfulLines = [] } = body ?? {};
+  const linesOk =
+    Array.isArray(lines) &&
+    lines.length >= 2 &&
+    lines.length <= MAX_LINES &&
+    lines.every((l) => typeof l === 'string' && l.trim() !== '' && l.length <= MAX_LINE_CHARS);
+  const doubtfulOk =
+    Array.isArray(doubtfulLines) && doubtfulLines.every((n) => Number.isInteger(n) && n >= 1 && n <= (lines?.length ?? 0));
+  return linesOk && doubtfulOk ? { lines: lines.map((l) => l.trim()), doubtfulLines } : null;
+}
 
 const FRIENDLY = {
   invalid_input: 'That request was not something I can check.',
@@ -47,6 +62,17 @@ export function createApp() {
       return sendOk(res, checked.value);
     } catch (err) {
       return handleFailure(res, 'read', err);
+    }
+  });
+
+  app.post('/api/check', async (req, res) => {
+    const input = parseCheckBody(req.body);
+    if (!input) return sendError(res, 'invalid_input');
+    try {
+      const { display } = await checkLines(input.lines, { doubtfulLines: input.doubtfulLines });
+      return sendOk(res, display);
+    } catch (err) {
+      return handleFailure(res, 'check', err);
     }
   });
 
