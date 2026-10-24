@@ -64,7 +64,7 @@ Agreed with the learner: plain HTML/CSS/JS for the page, Node.js + Express for t
 - **Demo recording (for `6-ship`):** upload the real ∫ x·cos x photo with the sign error planted on line 5 → confirm the lines → Check → line 5 gets the cross and hint → fix line 5 → Check again → line 6 is flagged → fix line 6 → "No mistakes found." Record locally.
 - **Submission:** a short demo video plus a public GitHub repo. `.env` is never committed, and `.env.example` holds no secrets.
 - **Public repo:** https://github.com/beingkumara/correct-me (published 2026-10-23; learner profile, `.env`, `agent/`, `.claude/`, and `samples/tshirt.jpeg` kept out).
-- **Demo video:** not recorded yet.
+- **Demo video:** https://youtu.be/8IyX6GLCaQY (YouTube, public; recorded 2026-10-24 by the learner).
 - **Deployment:** optional, **only if there's spare time**. No target chosen.
 
 ## Look and Feel
